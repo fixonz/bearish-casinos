@@ -116,17 +116,34 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
 
   // Draw chart effect
   useEffect(() => {
-    if (!chartRef.current || !isRunning) return;
+    if (!chartRef.current) return;
     
     const ctx = chartRef.current;
     const width = ctx.clientWidth;
     const height = ctx.clientHeight;
     
-    // Update chart position based on multiplier
-    ctx.style.setProperty('--x', `${Math.min(multiplier * 10, width - 20)}px`);
-    ctx.style.setProperty('--y', `${height - Math.min(multiplier * 20, height - 20)}px`);
+    if (isRunning) {
+      // Update chart position based on multiplier with a logarithmic curve
+      // This creates a more realistic trading chart pattern that starts steep and flattens
+      const baseX = Math.min(multiplier * 12, width * 0.8);
+      const logY = height - Math.min(Math.log(multiplier + 1) * 85, height - 30);
+      
+      ctx.style.setProperty('--x', `${baseX}px`);
+      ctx.style.setProperty('--y', `${logY}px`);
+    } else if (hasCrashed) {
+      // When crashed, position at the crash point
+      const baseX = Math.min(multiplier * 12, width * 0.8);
+      const logY = height - Math.min(Math.log(multiplier + 1) * 85, height - 30);
+      
+      ctx.style.setProperty('--x', `${baseX}px`);
+      ctx.style.setProperty('--y', `${logY}px`);
+    } else {
+      // Reset to starting position
+      ctx.style.setProperty('--x', '0px');
+      ctx.style.setProperty('--y', `${height}px`);
+    }
     
-  }, [multiplier, isRunning]);
+  }, [multiplier, isRunning, hasCrashed]);
 
   return (
     <>
@@ -175,19 +192,87 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               '--y': `${chartRef.current?.clientHeight || 0}px`
             } as React.CSSProperties}
           >
-            {/* Dynamic Candles - Decorative */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div 
-                key={`candle-${i}`} 
-                className={`absolute w-4 ${i % 2 === 0 ? 'bg-[#00FF00]' : 'bg-[#FF4081]'}`}
-                style={{ 
-                  height: `${10 + Math.random() * 40}px`, 
-                  left: `${i * 30 + 20}px`, 
+            {/* Background decoration - static candles */}
+            {!isRunning && !hasCrashed && 
+              Array.from({ length: 20 }).map((_, i) => {
+                const isGreen = Math.random() > 0.4;
+                const width = 6 + Math.random() * 4;
+                const height = 10 + Math.random() * 60;
+                return (
+                  <div 
+                    key={`bg-candle-${i}`} 
+                    className="absolute"
+                    style={{ 
+                      bottom: '20px',
+                      left: `${i * 15 + 10}px`, 
+                      opacity: 0.4
+                    }}
+                  >
+                    {/* Candle wick - top line */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2 w-0.5"
+                      style={{
+                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
+                        height: `${5 + Math.random() * 15}px`,
+                        bottom: `${height}px`
+                      }}
+                    ></div>
+                    
+                    {/* Candle body */}
+                    <div 
+                      style={{
+                        width: `${width}px`,
+                        height: `${height}px`,
+                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
+                        opacity: isGreen ? 0.6 : 0.5
+                      }}
+                    ></div>
+                    
+                    {/* Candle wick - bottom line */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2 w-0.5"
+                      style={{
+                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
+                        height: `${5 + Math.random() * 10}px`,
+                        top: `${height}px`
+                      }}
+                    ></div>
+                  </div>
+                );
+              })
+            }
+            
+            {/* Active main green candle when game is running */}
+            {isRunning && !hasCrashed && (
+              <div className="absolute z-10 transition-all duration-100" 
+                style={{
                   bottom: '20px',
-                  opacity: 0.7
+                  left: '20%',
+                  transform: 'translateX(-50%)'
                 }}
-              ></div>
-            ))}
+              >
+                {/* Candle wick - top line */}
+                <div 
+                  className="absolute left-1/2 -translate-x-1/2 w-1 bg-[#00FF00]"
+                  style={{
+                    height: '10px',
+                    bottom: `calc(${Math.min(multiplier * 20, 190)}px + 5px)`,
+                    opacity: 0.8
+                  }}
+                ></div>
+                
+                {/* Candle body */}
+                <div 
+                  className="transition-all duration-100 shadow-[0_0_15px_rgba(0,255,0,0.5)]"
+                  style={{
+                    width: '12px',
+                    height: `${Math.min(multiplier * 20, 190)}px`,
+                    backgroundColor: '#00FF00',
+                    opacity: 0.8
+                  }}
+                ></div>
+              </div>
+            )}
             
             {/* Green line path when game is running */}
             {isRunning && !hasCrashed && (
@@ -208,18 +293,50 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 <path
                   d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y)`}
                   stroke="#00FF00"
-                  strokeWidth="3"
+                  strokeWidth="2"
                   fill="none"
                 />
                 <circle
                   cx="var(--x)"
                   cy="var(--y)"
-                  r="5"
+                  r="4"
                   fill="#00FF00"
                   stroke="#FFFFFF"
-                  strokeWidth="2"
+                  strokeWidth="1"
                 />
               </svg>
+            )}
+            
+            {/* Red crash candle when crashed */}
+            {hasCrashed && !hasUserCashedOut && (
+              <div className="absolute z-10" 
+                style={{
+                  bottom: '20px',
+                  left: '70%',
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                {/* Candle body */}
+                <div 
+                  className="shadow-[0_0_15px_rgba(255,64,129,0.7)]"
+                  style={{
+                    width: '12px',
+                    height: `${Math.min(multiplier * 20, 190)}px`,
+                    backgroundColor: '#FF4081',
+                    opacity: 0.8
+                  }}
+                ></div>
+                
+                {/* Crash line */}
+                <div 
+                  className="absolute w-40 h-0.5 bg-[#FF4081] transform rotate-45 origin-left"
+                  style={{
+                    top: '0',
+                    left: '12px',
+                    boxShadow: '0 0 10px rgba(255,64,129,0.7)'
+                  }}
+                ></div>
+              </div>
             )}
             
             {/* Red crash line when crashed */}
@@ -241,17 +358,8 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 <path
                   d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y)`}
                   stroke="#FF4081"
-                  strokeWidth="3"
+                  strokeWidth="2"
                   fill="none"
-                />
-                <line 
-                  x1="var(--x)" 
-                  y1="var(--y)" 
-                  x2="calc(var(--x) + 100px)" 
-                  y2="calc(var(--y) + 100px)"
-                  stroke="#FF4081"
-                  strokeWidth="3"
-                  strokeDasharray="5,5"
                 />
               </svg>
             )}
