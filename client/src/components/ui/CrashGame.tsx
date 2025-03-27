@@ -616,7 +616,6 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               </div>
             </div>
           </TabsContent>
-        </TabsContent>
         </Tabs>
       </Card>
 
