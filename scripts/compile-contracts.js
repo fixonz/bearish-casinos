@@ -2,10 +2,17 @@
 // Compile script for Abstract Network Casino contracts
 // Usage: node scripts/compile-contracts.js
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-require('dotenv').config();
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Get directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // This is a placeholder for solidity compilation
 // In a real deployment, we would use solc or hardhat
