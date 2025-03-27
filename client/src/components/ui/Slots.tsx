@@ -5,6 +5,7 @@ import { useWalletContext } from '@/context/WalletContext';
 import { useSlots } from '@/hooks/useRandomization';
 import { useToast } from '@/hooks/use-toast';
 import WinModal from '@/components/modals/WinModal';
+import bearishshsImg from '@assets/bearishshs.png';
 
 interface SlotsProps {
   maxBet?: number;
@@ -109,20 +110,49 @@ const Slots: React.FC<SlotsProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
 
   // Generate multiple symbols for the reels
   const generateReelSymbols = () => {
-    return symbols.concat(symbols).map((symbol, index) => (
-      <div key={index} className="slot-symbol h-24 flex items-center justify-center text-4xl">
-        {symbol}
+    // Create multiple copies of the symbols to make the reels look continuous
+    const allSymbols = [...symbols, ...symbols, ...symbols, ...symbols];
+    return allSymbols.map((symbol, index) => (
+      <div 
+        key={index} 
+        className="slot-symbol h-24 flex items-center justify-center bg-gray-100 border-b border-gray-300"
+      >
+        <span className="text-5xl">{symbol}</span>
       </div>
     ));
+  };
+
+  // Map emoji symbols to images if needed
+  const getSymbolImage = (symbol: string | null) => {
+    if (!symbol) return null;
+    
+    switch (symbol) {
+      case '🐻':
+        return <img src={bearishshsImg} alt="Bear" className="h-16 w-16" />;
+      default:
+        return <span className="text-5xl">{symbol}</span>;
+    }
   };
 
   return (
     <>
       <div className="game-preview bg-[#1a1a1a] rounded-xl p-6 text-center relative overflow-hidden">
         {/* Slots machine */}
-        <div className="slots-machine bg-[#222222] rounded-xl p-4 mb-6 mx-auto max-w-sm">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="slot-reel h-24 bg-white rounded-lg overflow-hidden">
+        <div className="slots-machine bg-[#222222] rounded-xl p-6 mb-6 mx-auto max-w-sm">
+          {/* Winning line indicator */}
+          <div className="relative mb-2">
+            <div className="h-1 bg-[#FFD700] absolute left-0 right-0 top-1/2 transform -translate-y-1/2 z-10"></div>
+            <div className="flex justify-between">
+              <div className="w-3 h-3 bg-[#FFD700] rounded-full relative z-20"></div>
+              <div className="w-3 h-3 bg-[#FFD700] rounded-full relative z-20"></div>
+            </div>
+          </div>
+          
+          {/* Slot reels */}
+          <div className="grid grid-cols-3 gap-4 mb-6 relative">
+            <div className="slot-reel h-24 bg-gray-900 rounded-lg overflow-hidden relative shadow-inner">
+              {/* Win line indicator */}
+              <div className="absolute left-0 right-0 h-24 border-y-2 border-[#FFD700] opacity-50 z-10 pointer-events-none"></div>
               <div 
                 ref={reel1Ref} 
                 className="slot-symbols transition-transform duration-[2500ms] ease-out"
@@ -131,7 +161,9 @@ const Slots: React.FC<SlotsProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
                 {generateReelSymbols()}
               </div>
             </div>
-            <div className="slot-reel h-24 bg-white rounded-lg overflow-hidden">
+            <div className="slot-reel h-24 bg-gray-900 rounded-lg overflow-hidden relative shadow-inner">
+              {/* Win line indicator */}
+              <div className="absolute left-0 right-0 h-24 border-y-2 border-[#FFD700] opacity-50 z-10 pointer-events-none"></div>
               <div 
                 ref={reel2Ref} 
                 className="slot-symbols transition-transform duration-[2500ms] ease-out"
@@ -140,7 +172,9 @@ const Slots: React.FC<SlotsProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
                 {generateReelSymbols()}
               </div>
             </div>
-            <div className="slot-reel h-24 bg-white rounded-lg overflow-hidden">
+            <div className="slot-reel h-24 bg-gray-900 rounded-lg overflow-hidden relative shadow-inner">
+              {/* Win line indicator */}
+              <div className="absolute left-0 right-0 h-24 border-y-2 border-[#FFD700] opacity-50 z-10 pointer-events-none"></div>
               <div 
                 ref={reel3Ref} 
                 className="slot-symbols transition-transform duration-[2500ms] ease-out"
@@ -182,7 +216,9 @@ const Slots: React.FC<SlotsProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
           {result.every(r => r) && (
             <div className="mt-4 flex justify-center gap-4">
               {result.map((symbol, index) => (
-                <div key={index} className="text-4xl">{symbol}</div>
+                <div key={index} className="text-4xl bg-gray-900 p-4 rounded-lg shadow-lg">
+                  {getSymbolImage(symbol)}
+                </div>
               ))}
             </div>
           )}

@@ -6,6 +6,7 @@ import { useCrash } from '@/hooks/useRandomization';
 import { useToast } from '@/hooks/use-toast';
 import WinModal from '@/components/modals/WinModal';
 import { formatNumber } from '@/lib/utils';
+import bearishshsImg from '@assets/bearishshs.png';
 
 interface CrashGameProps {
   maxBet?: number;
@@ -131,15 +132,33 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
     <>
       <div className="game-preview bg-[#1a1a1a] rounded-xl p-6 text-center relative overflow-hidden">
         {/* Crash game chart */}
-        <div className="bg-[#222222] rounded-xl p-4 mb-6 relative h-64 overflow-hidden">
-          {/* Chart lines */}
+        <div className="bg-[#121212] rounded-xl p-4 mb-6 relative h-64 overflow-hidden">
+          {/* Chart grid lines */}
           <div className="absolute inset-0 grid grid-cols-4 grid-rows-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={`h-${i}`} className="border-t border-gray-700 w-full"></div>
+              <div key={`h-${i}`} className="border-t border-gray-800 w-full"></div>
             ))}
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={`v-${i}`} className="border-l border-gray-700 h-full"></div>
+              <div key={`v-${i}`} className="border-l border-gray-800 h-full"></div>
             ))}
+          </div>
+          
+          {/* Trading intervals */}
+          <div className="absolute bottom-2 left-2 right-2 flex justify-between text-xs text-gray-500 z-10">
+            <span>0s</span>
+            <span>5s</span>
+            <span>10s</span>
+            <span>15s</span>
+            <span>20s</span>
+          </div>
+          
+          {/* Multiplier scale */}
+          <div className="absolute top-2 right-2 bottom-8 w-10 flex flex-col justify-between items-end text-xs text-gray-500 z-10">
+            <span>10x</span>
+            <span>7.5x</span>
+            <span>5x</span>
+            <span>2.5x</span>
+            <span>1x</span>
           </div>
           
           {/* Multiplier display */}
@@ -156,29 +175,83 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               '--y': `${chartRef.current?.clientHeight || 0}px`
             } as React.CSSProperties}
           >
-            {isRunning && (
+            {/* Dynamic Candles - Decorative */}
+            {Array.from({ length: 8 }).map((_, i) => (
               <div 
-                className="absolute w-4 h-4 bg-[#FF4081] rounded-full"
+                key={`candle-${i}`} 
+                className={`absolute w-4 ${i % 2 === 0 ? 'bg-[#00FF00]' : 'bg-[#FF4081]'}`}
                 style={{ 
-                  left: 'var(--x)', 
-                  bottom: 'var(--y)', 
-                  transform: 'translate(-50%, 50%)',
-                  boxShadow: '0 0 10px #FF4081'
+                  height: `${10 + Math.random() * 40}px`, 
+                  left: `${i * 30 + 20}px`, 
+                  bottom: '20px',
+                  opacity: 0.7
                 }}
               ></div>
-            )}
+            ))}
             
-            {/* Chart line */}
-            {isRunning && (
+            {/* Green line path when game is running */}
+            {isRunning && !hasCrashed && (
               <svg 
                 className="absolute bottom-0 left-0 w-full h-full overflow-visible" 
-                style={{ zIndex: 1 }}
+                style={{ zIndex: 5 }}
               >
+                <defs>
+                  <linearGradient id="greenGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#00FF00" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#00FF00" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y) L var(--x),${chartRef.current?.clientHeight || 0} Z`}
+                  fill="url(#greenGradient)"
+                />
+                <path
+                  d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y)`}
+                  stroke="#00FF00"
+                  strokeWidth="3"
+                  fill="none"
+                />
+                <circle
+                  cx="var(--x)"
+                  cy="var(--y)"
+                  r="5"
+                  fill="#00FF00"
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
+                />
+              </svg>
+            )}
+            
+            {/* Red crash line when crashed */}
+            {hasCrashed && !hasUserCashedOut && (
+              <svg 
+                className="absolute bottom-0 left-0 w-full h-full overflow-visible" 
+                style={{ zIndex: 5 }}
+              >
+                <defs>
+                  <linearGradient id="redGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#FF4081" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#FF4081" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y) L var(--x),${chartRef.current?.clientHeight || 0} Z`}
+                  fill="url(#redGradient)"
+                />
                 <path
                   d={`M0,${chartRef.current?.clientHeight || 0} L var(--x),var(--y)`}
                   stroke="#FF4081"
-                  strokeWidth="2"
+                  strokeWidth="3"
                   fill="none"
+                />
+                <line 
+                  x1="var(--x)" 
+                  y1="var(--y)" 
+                  x2="calc(var(--x) + 100px)" 
+                  y2="calc(var(--y) + 100px)"
+                  stroke="#FF4081"
+                  strokeWidth="3"
+                  strokeDasharray="5,5"
                 />
               </svg>
             )}
@@ -186,9 +259,15 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
           
           {/* Game state overlay */}
           {(hasCrashed || hasUserCashedOut) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 z-20">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 z-20">
               {hasCrashed && !hasUserCashedOut && (
-                <div className="text-4xl font-bold text-[#FF4081]">CRASHED @ {multiplier.toFixed(2)}x</div>
+                <>
+                  <img src={bearishshsImg} alt="Bear" className="w-20 h-20 mb-2" />
+                  <div className="text-4xl font-bold text-[#FF4081]">DEV RUGGED!</div>
+                  <div className="mt-2 text-2xl font-bold text-white">
+                    CRASHED @ {multiplier.toFixed(2)}x
+                  </div>
+                </>
               )}
               {hasUserCashedOut && (
                 <div className="text-4xl font-bold text-[#00FF00]">

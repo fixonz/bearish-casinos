@@ -83,8 +83,17 @@ export const useSlots = () => {
   const [result, setResult] = useState<Array<string | null>>([null, null, null]);
   const [hasWon, setHasWon] = useState<boolean | null>(null);
 
-  // Possible symbols for the slots
+  // Possible symbols for the slots - using bear themed symbols
   const symbols = ['🐻', '💰', '⭐', '🍒', '7️⃣'];
+  
+  // Symbol payouts - different symbols have different values
+  const symbolPayouts = {
+    '🐻': 5, // bear has the highest payout (5x)
+    '💰': 3, // money bag has 3x
+    '⭐': 2, // star has 2x
+    '🍒': 1.5, // cherry has 1.5x
+    '7️⃣': 4, // seven has 4x
+  };
 
   const spin = useCallback(() => {
     setIsSpinning(true);
@@ -93,28 +102,47 @@ export const useSlots = () => {
 
     // Simulate delay for animation
     setTimeout(() => {
-      // Get random symbols for each reel
+      // Get random symbols for each reel with weighted probabilities
+      // Higher value symbols have lower probability
+      const generateWeightedSymbol = () => {
+        const rand = Math.random();
+        if (rand < 0.1) return '🐻'; // 10% chance for bear
+        if (rand < 0.25) return '7️⃣'; // 15% chance for seven
+        if (rand < 0.45) return '💰'; // 20% chance for money bag
+        if (rand < 0.70) return '⭐'; // 25% chance for star
+        return '🍒'; // 30% chance for cherry
+      };
+      
       const spinResult = [
-        symbols[getRandomNumber(0, symbols.length - 1)],
-        symbols[getRandomNumber(0, symbols.length - 1)],
-        symbols[getRandomNumber(0, symbols.length - 1)]
+        generateWeightedSymbol(),
+        generateWeightedSymbol(),
+        generateWeightedSymbol()
       ];
       
       setResult(spinResult);
       
-      // Check if all symbols match (win condition)
-      const win = spinResult[0] === spinResult[1] && spinResult[1] === spinResult[2];
-      setHasWon(win);
+      // Check win conditions:
+      // - All three symbols match (big win)
+      // - Two adjacent symbols match (small win)
+      const allMatch = spinResult[0] === spinResult[1] && spinResult[1] === spinResult[2];
+      const twoMatch = 
+        spinResult[0] === spinResult[1] || 
+        spinResult[1] === spinResult[2];
+      
+      // For simplicity, we'll only count a win if all symbols match
+      // In a real implementation, we'd calculate partial payouts for two matches
+      setHasWon(allMatch);
       setIsSpinning(false);
     }, 2500);
-  }, [symbols]);
+  }, []);
 
   return {
     isSpinning,
     result,
     hasWon,
     spin,
-    symbols
+    symbols,
+    symbolPayouts
   };
 };
 
