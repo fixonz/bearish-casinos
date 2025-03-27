@@ -45,13 +45,13 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
     changePlayerNickname,
     changePlayerProfilePicture
   } = useCrash();
-  
+
   const [betAmount, setBetAmount] = useState(1.0);
   const [potentialWin, setPotentialWin] = useState(0);
   const [showWinModal, setShowWinModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<'ETH' | 'PENGU'>('ETH');
   const chartRef = useRef<HTMLDivElement>(null);
-  
+
   // Update potential win as multiplier changes
   useEffect(() => {
     if (isRunning) {
@@ -66,7 +66,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
       setBetAmount(value);
     }
   };
-  
+
   // Toggle selected token
   const toggleToken = () => {
     setSelectedToken(prev => prev === 'ETH' ? 'PENGU' : 'ETH');
@@ -75,7 +75,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
   // Handle start game button click
   const handleStartGame = () => {
     if (isRunning) return;
-    
+
     if (!wallet.isConnected) {
       toast({
         title: "Wallet not connected",
@@ -84,7 +84,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
       });
       return;
     }
-    
+
     if (wallet.balance < betAmount) {
       toast({
         title: "Insufficient balance",
@@ -93,10 +93,10 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
       });
       return;
     }
-    
+
     // Place the bet
     placeBet(betAmount);
-    
+
     // Start the game
     startGame();
   };
@@ -104,14 +104,14 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
   // Handle cash out button click
   const handleCashOut = () => {
     if (!isRunning || hasCrashed || hasUserCashedOut) return;
-    
+
     // Cash out
     cashOut();
-    
+
     // Add winnings
     const winnings = betAmount * multiplier;
     addWinnings(winnings);
-    
+
     // Show win modal
     setTimeout(() => {
       setShowWinModal(true);
@@ -143,24 +143,24 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
   // Draw chart effect
   useEffect(() => {
     if (!chartRef.current) return;
-    
+
     const ctx = chartRef.current;
     const width = ctx.clientWidth;
     const height = ctx.clientHeight;
-    
+
     if (isRunning) {
       // Update chart position based on multiplier with a logarithmic curve
       // This creates a more realistic trading chart pattern that starts steep and flattens
       const baseX = Math.min(multiplier * 12, width * 0.8);
       const logY = height - Math.min(Math.log(multiplier + 1) * 85, height - 30);
-      
+
       ctx.style.setProperty('--x', `${baseX}px`);
       ctx.style.setProperty('--y', `${logY}px`);
     } else if (hasCrashed) {
       // When crashed, position at the crash point
       const baseX = Math.min(multiplier * 12, width * 0.8);
       const logY = height - Math.min(Math.log(multiplier + 1) * 85, height - 30);
-      
+
       ctx.style.setProperty('--x', `${baseX}px`);
       ctx.style.setProperty('--y', `${logY}px`);
     } else {
@@ -168,7 +168,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
       ctx.style.setProperty('--x', '0px');
       ctx.style.setProperty('--y', `${height}px`);
     }
-    
+
   }, [multiplier, isRunning, hasCrashed]);
 
   return (
@@ -185,7 +185,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               <div key={`v-${i}`} className="border-l border-gray-800 h-full"></div>
             ))}
           </div>
-          
+
           {/* Trading intervals */}
           <div className="absolute bottom-2 left-2 right-2 flex justify-between text-xs text-gray-500 z-10">
             <span>0s</span>
@@ -194,7 +194,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             <span>15s</span>
             <span>20s</span>
           </div>
-          
+
           {/* Multiplier scale */}
           <div className="absolute top-2 right-2 bottom-8 w-10 flex flex-col justify-between items-end text-xs text-gray-500 z-10">
             <span>10x</span>
@@ -203,12 +203,12 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             <span>2.5x</span>
             <span>1x</span>
           </div>
-          
+
           {/* Multiplier display */}
           <div className="absolute top-2 left-2 text-4xl font-bold text-white z-10">
             {isRunning || hasCrashed ? formatNumber(multiplier, 2) + 'x' : '1.00x'}
           </div>
-          
+
           {/* Chart */}
           <div 
             ref={chartRef} 
@@ -244,7 +244,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                         opacity: 0.8
                       }}
                     ></div>
-                    
+
                     {/* Candle body */}
                     <div 
                       style={{
@@ -255,7 +255,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                         opacity: isGreen ? 0.6 : 0.5
                       }}
                     ></div>
-                    
+
                     {/* Lower Wick */}
                     <div 
                       className="absolute mx-auto left-0 right-0 w-[1px]"
@@ -270,7 +270,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 );
               })
             }
-            
+
             {/* Active candles from the candles array when game is running */}
             {isRunning && !hasCrashed && candles.map((candle, index) => (
               <div 
@@ -293,7 +293,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     opacity: 0.8
                   }}
                 ></div>
-                
+
                 {/* Lower Wick */}
                 <div 
                   className="absolute mx-auto left-0 right-0 w-[2px]"
@@ -304,7 +304,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     opacity: 0.8
                   }}
                 ></div>
-                
+
                 {/* Candle body */}
                 <div 
                   className={`transition-all ${index === activeCandle ? 'shadow-[0_0_10px_rgba(0,255,0,0.7)]' : ''}`}
@@ -319,7 +319,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 ></div>
               </div>
             ))}
-            
+
             {/* Green line path when game is running */}
             {isRunning && !hasCrashed && (
               <svg 
@@ -352,7 +352,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 />
               </svg>
             )}
-            
+
             {/* Red crash candle when crashed */}
             {hasCrashed && !hasUserCashedOut && (
               <div className="absolute z-10" 
@@ -372,7 +372,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     opacity: 0.8
                   }}
                 ></div>
-                
+
                 {/* Crash line */}
                 <div 
                   className="absolute w-40 h-0.5 bg-[#FF4081] transform rotate-45 origin-left"
@@ -384,7 +384,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 ></div>
               </div>
             )}
-            
+
             {/* Red crash line when crashed */}
             {hasCrashed && !hasUserCashedOut && (
               <svg 
@@ -410,7 +410,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               </svg>
             )}
           </div>
-          
+
           {/* Game state overlay */}
           {(hasCrashed || hasUserCashedOut) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 z-20">
@@ -431,7 +431,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             </div>
           )}
         </div>
-        
+
         <div className="mb-6">
           <div className={`text-2xl font-bold mb-2 ${
             hasUserCashedOut ? 'text-[#00FF00]' : 
@@ -451,7 +451,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             )}
           </div>
         </div>
-        
+
         {/* Action buttons */}
         <div className="flex justify-center space-x-4 mb-6">
           <Button 
@@ -466,7 +466,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             {isRunning ? 'CASH OUT' : 'PLACE BET'}
           </Button>
         </div>
-        
+
         {/* Bet controls */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -501,12 +501,12 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             </div>
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#FFD700] bg-opacity-10 rounded-full"></div>
         <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#FF4081] bg-opacity-10 rounded-full"></div>
       </div>
-      
+
       {/* Real-time Game Chat */}
       <Card className="mt-6 bg-[#1a1a1a] p-0 overflow-hidden shadow-xl relative">
         <div className="p-4">
@@ -525,7 +525,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             <Button>Send</Button>
           </div>
         </div>
-          
+
           {/* Players Tab */}
           <TabsContent value="players" className="m-0">
             <div className="p-4">
@@ -535,7 +535,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 <div>Cash Out</div>
                 <div>Profit</div>
               </div>
-              
+
               <ScrollArea className="h-[280px]">
                 {Array.from([...Array(10)].map((_, i) => ({
                   id: `player${i}`,
@@ -567,12 +567,12 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                       </Avatar>
                       <div className="text-sm font-medium truncate">{player.username}</div>
                     </div>
-                    
+
                     <div className="text-sm">
                       <span className="font-medium">{player.betAmount}</span> 
                       <span className="text-gray-400 text-xs"> ETH</span>
                     </div>
-                    
+
                     <div className="text-sm">
                       {player.hasCashedOut ? (
                         <span className="text-[#00FF00] font-semibold">{player.cashOutMultiplier}x</span>
@@ -580,7 +580,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                         <span className="text-gray-400">-</span>
                       )}
                     </div>
-                    
+
                     <div className="text-sm ml-auto">
                       {player.hasCashedOut ? (
                         <Badge className="bg-[#00AA00] hover:bg-[#00AA00]">
@@ -595,7 +595,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               </ScrollArea>
             </div>
           </TabsContent>
-          
+
           {/* Chat Tab */}
           <TabsContent value="chat" className="m-0 p-0">
             <div className="flex flex-col h-[332px]">
@@ -650,7 +650,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                   </div>
                 ))}
               </ScrollArea>
-              
+
               <div className="p-4 border-t border-[#333] mt-auto">
                 <form 
                   className="flex items-center gap-2"
@@ -670,7 +670,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               </div>
             </div>
           </TabsContent>
-          
+
           {/* Profile Settings Tab */}
           <TabsContent value="settings" className="m-0">
             <div className="p-6 space-y-6">
@@ -681,7 +681,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     {wallet.isConnected ? wallet.address.substring(0, 2).toUpperCase() : "?"}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 space-y-1 text-center sm:text-left">
                   <h3 className="text-xl font-semibold">
                     {wallet.isConnected ? 
@@ -693,9 +693,9 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                   )}
                 </div>
               </div>
-              
+
               <Separator className="bg-[#333]" />
-              
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm text-gray-300">Display Name</label>
@@ -706,7 +706,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     disabled={!wallet.isConnected}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm text-gray-300">Profile Picture</label>
                   <div className="grid grid-cols-5 gap-2">
@@ -729,7 +729,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                     ))}
                   </div>
                 </div>
-                
+
                 <Button className="w-full bg-[#FFD700] text-black hover:bg-[#E5C100]" disabled={!wallet.isConnected}>
                   Save Profile
                 </Button>
