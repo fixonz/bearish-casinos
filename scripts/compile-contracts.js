@@ -14,16 +14,15 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// This is a placeholder for solidity compilation
-// In a real deployment, we would use solc or hardhat
-// For now, we'll just simulate the compilation
+// Import solc
+import solc from 'solc';
+
+// Function to compile a Solidity contract using solc
 async function compileContract(name) {
   console.log(`Compiling ${name}...`);
   
-  // The actual compilation would happen here
-  // For example, using solc or hardhat
-  
-  const contractPath = path.join(__dirname, '..', 'contracts', `${name}.sol`);
+  const contractsDir = path.join(__dirname, '..', 'contracts');
+  const contractPath = path.join(contractsDir, `${name}.sol`);
   console.log(`Reading contract from: ${contractPath}`);
   
   // Check if contract file exists
@@ -35,13 +34,81 @@ async function compileContract(name) {
   const contractCode = fs.readFileSync(contractPath, 'utf8');
   console.log(`Contract ${name} has ${contractCode.split('\n').length} lines of code`);
   
-  // Simulate successful compilation
-  console.log(`${name} compiled successfully`);
+  // Find imports in the contract
+  const importRegex = /import\s+["'](.+?)["'];/g;
+  let match;
+  const sources = {};
   
-  // In a real implementation, we would return the ABI and bytecode
+  // Add the main contract to sources
+  sources[`${name}.sol`] = { content: contractCode };
+  
+  // Find all imports and add them to sources
+  while ((match = importRegex.exec(contractCode)) !== null) {
+    const importPath = match[1];
+    const importName = path.basename(importPath);
+    const importFullPath = path.join(contractsDir, importPath);
+    
+    if (fs.existsSync(importFullPath)) {
+      const importContent = fs.readFileSync(importFullPath, 'utf8');
+      sources[importName] = { content: importContent };
+      console.log(`Added import: ${importName}`);
+    }
+  }
+  
+  // Define compiler input
+  const input = {
+    language: 'Solidity',
+    sources: sources,
+    settings: {
+      outputSelection: {
+        '*': {
+          '*': ['abi', 'evm.bytecode']
+        }
+      },
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  };
+  
+  // Compile the contract
+  console.log(`Compiling with solc version ${solc.version()}...`);
+  const output = JSON.parse(solc.compile(JSON.stringify(input)));
+  
+  // Check for errors
+  if (output.errors) {
+    const hasError = output.errors.some(error => error.severity === 'error');
+    if (hasError) {
+      console.error('Compilation errors:');
+      output.errors.forEach(error => {
+        console.error(error.formattedMessage);
+      });
+      throw new Error('Contract compilation failed');
+    } else {
+      // Only warnings, log them but continue
+      console.warn('Compilation warnings:');
+      output.errors.forEach(warning => {
+        console.warn(warning.formattedMessage);
+      });
+    }
+  }
+  
+  // Extract ABI and bytecode from the output
+  const contractOutput = output.contracts[`${name}.sol`][name];
+  
+  if (!contractOutput) {
+    throw new Error(`Could not find compiled output for ${name}`);
+  }
+  
+  const abi = contractOutput.abi;
+  const bytecode = contractOutput.evm.bytecode.object;
+  
+  console.log(`${name} compiled successfully!`);
+  
   return {
-    abi: [],
-    bytecode: '0x'
+    abi,
+    bytecode: `0x${bytecode}`
   };
 }
 

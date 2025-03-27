@@ -1,40 +1,52 @@
 #!/bin/bash
+# Script to deploy contracts to Abstract Network
+# Usage: ./scripts/run-deploy.sh [simulation]
 
-echo "Starting Abstract Network contract deployment process..."
-echo "-------------------------------------------------------"
+# Set script to exit on any error
+set -e
 
-# Check environment variables
-if [ -z "$PRIVATE_KEY" ]; then
-  if [ -f .env ]; then
-    echo "Loading environment variables from .env file..."
-    export $(grep -v '^#' .env | xargs)
-  else
-    echo "Error: PRIVATE_KEY environment variable is not set and .env file does not exist."
+# Check if the .env file exists
+if [ ! -f ".env" ]; then
+    echo "Error: .env file not found!"
+    echo "Please create a .env file with the required environment variables."
     exit 1
-  fi
 fi
 
-if [ -z "$PRIVATE_KEY" ]; then
-  echo "Error: PRIVATE_KEY environment variable is required for deployment."
-  exit 1
+# Check if the PRIVATE_KEY is set in the .env file
+if ! grep -q "PRIVATE_KEY" .env; then
+    echo "Error: PRIVATE_KEY environment variable not found in .env file!"
+    exit 1
 fi
 
-echo "Deploying contracts to Abstract Network testnet..."
+# Check if the ABSTRACT_RPC_URL is set in the .env file
+if ! grep -q "ABSTRACT_RPC_URL" .env && ! grep -q "RPC_URL" .env; then
+    echo "Error: Neither ABSTRACT_RPC_URL nor RPC_URL environment variable found in .env file!"
+    exit 1
+fi
 
-# Run the JavaScript deployment script
+# Check if first argument is "simulation"
+if [ "$1" = "simulation" ]; then
+    echo "Running in simulation mode..."
+    export SIMULATION_MODE=true
+else
+    echo "Running in production mode... (Will deploy real contracts to the blockchain)"
+    export SIMULATION_MODE=false
+    
+    # Confirmation prompt for production deployment
+    read -p "Are you sure you want to deploy contracts to Abstract Network? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Deployment cancelled."
+        exit 1
+    fi
+fi
+
+# Compile contracts first
+echo "Compiling contracts..."
+node scripts/compile-contracts.js
+
+# Deploy contracts
+echo "Deploying contracts..."
 node scripts/deploy-contracts.js
 
-# Check if the deployment was successful
-if [ $? -eq 0 ]; then
-  echo "Deployment completed successfully!"
-  echo "Contract addresses have been updated in .env.contracts file."
-else
-  echo "Deployment failed. Please check the logs for errors."
-  exit 1
-fi
-
-echo "-------------------------------------------------------"
-echo "Next steps:"
-echo "1. Update your frontend to use the new contract addresses"
-echo "2. Test the contracts on the Abstract Network testnet"
-echo "-------------------------------------------------------"
+echo "Deployment process completed!"

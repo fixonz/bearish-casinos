@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useWalletContext } from '@/context/WalletContext';
@@ -11,6 +11,9 @@ import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import headImg from '@assets/Red_Berry.png';
 import tailsImg from '@assets/Blue_Berry.png';
+import startSound from '@assets/455892__jalastram__start_sounds_001.wav';
+import flipSound from '@assets/677853__el_boss__coin-flip-ping.mp3';
+import impactSound from '@assets/646952__audiopapkin__impact-sfx-029.wav';
 
 interface CoinFlipProps {
   maxBet?: number;
@@ -35,6 +38,12 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
   const [potentialWin, setPotentialWin] = useState(2.0);
   const [showWinModal, setShowWinModal] = useState(false);
   const [useBlockchainVerification, setUseBlockchainVerification] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // Audio references
+  const startSoundRef = useRef<HTMLAudioElement | null>(null);
+  const flipSoundRef = useRef<HTMLAudioElement | null>(null);
+  const impactSoundRef = useRef<HTMLAudioElement | null>(null);
   
   // Update potential win when bet amount changes
   useEffect(() => {
@@ -133,12 +142,71 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
     setBetAmount(Math.min(betAmount * 2, maxBet));
   };
 
+  // Initialize audio elements
+  useEffect(() => {
+    startSoundRef.current = new Audio(startSound);
+    flipSoundRef.current = new Audio(flipSound);
+    impactSoundRef.current = new Audio(impactSound);
+    
+    // Set volume
+    if (startSoundRef.current) startSoundRef.current.volume = 0.5;
+    if (flipSoundRef.current) flipSoundRef.current.volume = 0.5;
+    if (impactSoundRef.current) impactSoundRef.current.volume = 0.5;
+    
+    return () => {
+      // Clean up
+      if (startSoundRef.current) startSoundRef.current.pause();
+      if (flipSoundRef.current) flipSoundRef.current.pause();
+      if (impactSoundRef.current) impactSoundRef.current.pause();
+    };
+  }, []);
+  
+  // Play sound effects based on game state
+  useEffect(() => {
+    if (!soundEnabled) return;
+    
+    if (isFlipping) {
+      // Play start sound when flip begins
+      if (startSoundRef.current) {
+        startSoundRef.current.currentTime = 0;
+        startSoundRef.current.play().catch(e => console.log("Error playing sound:", e));
+        
+        // Play flip sound with delay
+        setTimeout(() => {
+          if (flipSoundRef.current) {
+            flipSoundRef.current.currentTime = 0;
+            flipSoundRef.current.play().catch(e => console.log("Error playing sound:", e));
+          }
+        }, 900);
+      }
+    } else if (result) {
+      // Play impact sound when result shows
+      if (impactSoundRef.current) {
+        impactSoundRef.current.currentTime = 0;
+        impactSoundRef.current.play().catch(e => console.log("Error playing sound:", e));
+      }
+    }
+  }, [isFlipping, result, soundEnabled]);
+
   return (
     <>
       <div className="game-preview bg-[#1a1a1a] rounded-xl p-6 text-center relative overflow-hidden">
-        {/* Header with Provably Fair Badge */}
+        {/* Header with Sound Toggle and Provably Fair Badge */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-left">Berry Picker</h2>
+          <div className="flex items-center">
+            <h2 className="text-xl font-bold text-left mr-4">Berry Picker</h2>
+            <button 
+              onClick={() => setSoundEnabled(!soundEnabled)} 
+              className="text-gray-400 hover:text-white"
+              title={soundEnabled ? "Mute sound" : "Enable sound"}
+            >
+              {soundEnabled ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+              )}
+            </button>
+          </div>
           <ProvablyFairModal 
             defaultClientSeed={verificationData?.clientSeed || provablyFair.getClientSeed()}
             onClientSeedChange={setClientSeed}
