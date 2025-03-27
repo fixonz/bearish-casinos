@@ -26,13 +26,13 @@ const CoinFlipGame: React.FC = () => {
             <a className="text-gray-400 hover:text-[#FFD700]">Games</a>
           </Link>
           <span className="mx-2 text-gray-600">/</span>
-          <span className="text-[#FFD700]">Coin Flip</span>
+          <span className="text-[#FFD700]">Berry Picker</span>
         </div>
         
         {/* Game Title */}
         <div className="mb-8">
-          <h1 className="font-poppins font-bold text-3xl md:text-4xl mb-2">Coin Flip</h1>
-          <p className="text-gray-400 max-w-2xl">Flip a coin and double your bet with a 50% chance. Choose heads or tails and test your luck!</p>
+          <h1 className="font-poppins font-bold text-3xl md:text-4xl mb-2">Berry Picker</h1>
+          <p className="text-gray-400 max-w-2xl">Pick a berry and double your bet with a 50% chance. Choose the Red or Blue Berry and test your luck!</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -55,13 +55,13 @@ const CoinFlipGame: React.FC = () => {
                 <li className="flex">
                   <div className="w-8 h-8 bg-[#FFD700] text-black rounded-full flex items-center justify-center mr-3 flex-shrink-0">2</div>
                   <div>
-                    <p>Choose Heads or Tails to place your bet</p>
+                    <p>Choose Red or Blue Berry to place your bet</p>
                   </div>
                 </li>
                 <li className="flex">
                   <div className="w-8 h-8 bg-[#FFD700] text-black rounded-full flex items-center justify-center mr-3 flex-shrink-0">3</div>
                   <div>
-                    <p>Watch the coin flip and see if you win!</p>
+                    <p>Watch the berry picker and see if you win!</p>
                   </div>
                 </li>
               </ul>

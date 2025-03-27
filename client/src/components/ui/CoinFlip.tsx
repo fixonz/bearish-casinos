@@ -9,8 +9,8 @@ import ProvablyFairModal from '@/components/modals/ProvablyFairModal';
 import { provablyFair } from '@/lib/provablyFair';
 import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import headImg from '@assets/head.png';
-import tailsImg from '@assets/taills.png';
+import headImg from '@assets/Red_Berry.png';
+import tailsImg from '@assets/Blue_Berry.png';
 
 interface CoinFlipProps {
   maxBet?: number;
@@ -138,7 +138,7 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
       <div className="game-preview bg-[#1a1a1a] rounded-xl p-6 text-center relative overflow-hidden">
         {/* Header with Provably Fair Badge */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-left">Coin Flip</h2>
+          <h2 className="text-xl font-bold text-left">Berry Picker</h2>
           <ProvablyFairModal 
             defaultClientSeed={verificationData?.clientSeed || provablyFair.getClientSeed()}
             onClientSeedChange={setClientSeed}
@@ -158,13 +158,13 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
           </AlertDescription>
         </Alert>
         
-        {/* Animated coin element */}
-        <div className={`coin mb-6 ${isFlipping ? 'flipping' : ''}`}>
-          <div className="coin-front flex items-center justify-center">
-            <img src={headImg} alt="Heads" className="w-full h-full p-2" />
+        {/* Animated berry element */}
+        <div className={`berry mb-6 ${isFlipping ? 'flipping' : ''}`}>
+          <div className="berry-front flex items-center justify-center">
+            <img src={headImg} alt="Red Berry" className="w-full h-full p-2" />
           </div>
-          <div className="coin-back flex items-center justify-center">
-            <img src={tailsImg} alt="Tails" className="w-full h-full p-2" />
+          <div className="berry-back flex items-center justify-center">
+            <img src={tailsImg} alt="Blue Berry" className="w-full h-full p-2" />
           </div>
         </div>
         
@@ -172,12 +172,12 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
           <div className={`text-2xl font-bold mb-2 ${
             result ? (hasWon ? 'text-[#00FF00]' : 'text-[#FF4081]') : 'text-[#FFD700]'
           }`}>
-            {isFlipping ? 'Flipping...' : 
+            {isFlipping ? 'Picking a Berry...' : 
               result ? (hasWon ? 'You Won!' : 'You Lost!') : 
-              'Choose Heads or Tails!'}
+              'Choose Red or Blue Berry!'}
           </div>
           <div className="text-lg text-gray-300">
-            {result && !isFlipping && `The result was ${result}!`}
+            {result && !isFlipping && `The result was ${result === 'heads' ? 'Red Berry' : 'Blue Berry'}!`}
             {hasWon && <span className="text-[#00FF00]">You won {potentialWin.toFixed(2)} ATOM!</span>}
           </div>
         </div>
@@ -190,8 +190,8 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
             onClick={() => handleFlip('heads')}
             disabled={isFlipping}
           >
-            <img src={headImg} alt="Heads" className="w-6 h-6" />
-            <span>Heads</span>
+            <img src={headImg} alt="Red Berry" className="w-8 h-8" />
+            <span>Red Berry</span>
           </Button>
           <Button 
             className={`px-6 py-3 bg-[#1a1a1a] rounded-lg hover:bg-opacity-80 transition-all flex items-center space-x-2 ${
@@ -200,8 +200,8 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
             onClick={() => handleFlip('tails')}
             disabled={isFlipping}
           >
-            <img src={tailsImg} alt="Tails" className="w-6 h-6" />
-            <span>Tails</span>
+            <img src={tailsImg} alt="Blue Berry" className="w-8 h-8" />
+            <span>Blue Berry</span>
           </Button>
         </div>
         
@@ -242,9 +242,9 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                     item.won ? 'bg-green-600' : 'bg-red-600'
                   }`}
-                  title={`${item.selectedSide} → ${item.result} (${item.won ? 'Won' : 'Lost'})`}
+                  title={`${item.selectedSide === 'heads' ? 'Red Berry' : 'Blue Berry'} → ${item.result === 'heads' ? 'Red Berry' : 'Blue Berry'} (${item.won ? 'Won' : 'Lost'})`}
                 >
-                  {item.result === 'heads' ? 'H' : 'T'}
+                  {item.result === 'heads' ? 'R' : 'B'}
                 </div>
               ))}
             </div>
