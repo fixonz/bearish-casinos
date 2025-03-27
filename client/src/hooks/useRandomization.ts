@@ -318,14 +318,12 @@ export const useSimpleDiceRoll = () => {
 export const useSlots = () => {
   // Define slot symbols
   const symbols = [
-    { name: 'cherry', value: 2 },
-    { name: 'lemon', value: 3 },
-    { name: 'orange', value: 4 },
-    { name: 'plum', value: 5 },
-    { name: 'bell', value: 10 },
-    { name: 'bar', value: 20 },
-    { name: 'seven', value: 50 },
-    { name: 'diamond', value: 100 }
+    { name: 'bearishBlue', value: 2, image: '/assets/Blue_Berry.png' },
+    { name: 'bearishRed', value: 3, image: '/assets/Red_Berry.png' },
+    { name: 'bearishDark', value: 5, image: '/assets/processed-nft-33-1-dark.png' },
+    { name: 'bearishLogo', value: 10, image: '/assets/bearishshs.png' },
+    { name: 'abstractLogo', value: 20, image: '/assets/aeasd.png' },
+    { name: 'bearishHead', value: 50, image: '/assets/Y2HmxLIx_400x400.jpg' }
   ];
   
   const [reels, setReels] = useState<string[][]>([

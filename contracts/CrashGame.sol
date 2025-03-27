@@ -51,6 +51,9 @@ contract CrashGame is AbstractCasinoBase {
     uint256 private lastTimestamp;
 
     uint256 public constant GAME_INTERVAL = 45 seconds;
+    uint256 public constant MIN_PLAYERS = 1;
+    
+    event GameQueued(bytes32 indexed gameId, uint256 startTime);
 
     /**
      * @dev Constructor
