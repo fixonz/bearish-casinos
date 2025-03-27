@@ -194,6 +194,8 @@ export const useCrash = () => {
   const [cashOutMultiplier, setCashOutMultiplier] = useState<number | null>(null);
   const [history, setHistory] = useState<Array<{ multiplier: number, timestamp: Date }>>([]);
   const [chartData, setChartData] = useState<Array<{ time: number, value: number }>>([{ time: 0, value: 1 }]);
+  const [candles, setCandles] = useState<Array<{ position: number, height: number, isGreen: boolean, width: number }>>([]);
+  const [activeCandle, setActiveCandle] = useState<number>(0);
   
   // Generate a crash point with a consistent distribution regardless of bet amount
   const generateCrashPoint = (): number => {
@@ -234,6 +236,23 @@ export const useCrash = () => {
     return crashPoint;
   };
   
+  // Generate random candles for the chart
+  const generateCandles = () => {
+    const candleCount = 5;
+    const newCandles = [];
+    
+    for (let i = 0; i < candleCount; i++) {
+      newCandles.push({
+        position: 20 + i * 50, // Space them out horizontally
+        height: 30 + Math.random() * 70, // Random heights
+        isGreen: Math.random() > 0.4, // Most candles are green 
+        width: 10 + Math.random() * 5 // Slightly varying widths
+      });
+    }
+    
+    setCandles(newCandles);
+  };
+  
   // Start the crash game
   const startGame = useCallback(() => {
     if (isRunning) return;
@@ -244,6 +263,10 @@ export const useCrash = () => {
     setIsRunning(true);
     setHasUserCashedOut(false);
     setCashOutMultiplier(null);
+    setActiveCandle(0);
+    
+    // Generate candles for this round
+    generateCandles();
     
     // Generate the crash point - consistent regardless of bet amount
     const newCrashPoint = generateCrashPoint();
@@ -255,19 +278,26 @@ export const useCrash = () => {
     // Start increasing multiplier
     let startTime = Date.now();
     let timeElapsed = 0;
+    let candleIndex = 0;
     
     const interval = setInterval(() => {
       timeElapsed = (Date.now() - startTime) / 1000;
       
-      // Consistent multiplier growth function that doesn't change with bet amount
-      // Slower initial growth, then accelerating
-      const newMultiplier = Math.pow(1.0016, timeElapsed * 1000);
+      // MUCH slower growth curve for better gameplay
+      // This gives players time to enjoy the game and make decisions
+      const newMultiplier = 1 + (timeElapsed / 7); // Linear growth is easier to understand and predict
       const roundedMultiplier = Math.floor(newMultiplier * 100) / 100;
       
       setMultiplier(roundedMultiplier);
       
       // Add point to chart data
       setChartData(prev => [...prev, { time: timeElapsed, value: roundedMultiplier }]);
+      
+      // Update active candle every 5 seconds
+      if (timeElapsed > (candleIndex + 1) * 5 && candleIndex < candles.length - 1) {
+        candleIndex++;
+        setActiveCandle(candleIndex);
+      }
       
       // Check if we've reached the crash point
       if (roundedMultiplier >= newCrashPoint) {
@@ -276,7 +306,7 @@ export const useCrash = () => {
         setIsRunning(false);
         setHistory(prev => [{ multiplier: roundedMultiplier, timestamp: new Date() }, ...prev].slice(0, 10));
       }
-    }, 50); // Update every 50ms for smooth animation
+    }, 100); // Update every 100ms for smoother animation and less CPU usage
     
     return () => clearInterval(interval);
   }, [isRunning]);
@@ -301,6 +331,8 @@ export const useCrash = () => {
     cashOutMultiplier,
     history,
     chartData,
+    candles,
+    activeCandle,
     startGame,
     cashOut
   };

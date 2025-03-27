@@ -22,6 +22,8 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
     hasCrashed, 
     hasUserCashedOut,
     cashOutMultiplier,
+    candles,
+    activeCandle,
     startGame, 
     cashOut 
   } = useCrash();
@@ -29,6 +31,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
   const [betAmount, setBetAmount] = useState(1.0);
   const [potentialWin, setPotentialWin] = useState(0);
   const [showWinModal, setShowWinModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<'ETH' | 'PENGU'>('ETH');
   const chartRef = useRef<HTMLDivElement>(null);
   
   // Update potential win as multiplier changes
@@ -44,6 +47,11 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
     if (!isNaN(value) && value >= minBet && value <= maxBet) {
       setBetAmount(value);
     }
+  };
+  
+  // Toggle selected token
+  const toggleToken = () => {
+    setSelectedToken(prev => prev === 'ETH' ? 'PENGU' : 'ETH');
   };
 
   // Handle start game button click
@@ -242,37 +250,43 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
               })
             }
             
-            {/* Active main green candle when game is running */}
-            {isRunning && !hasCrashed && (
-              <div className="absolute z-10 transition-all duration-100" 
+            {/* Active candles from the candles array when game is running */}
+            {isRunning && !hasCrashed && candles.map((candle, index) => (
+              <div 
+                key={`active-candle-${index}`}
+                className={`absolute z-10 transition-all ${index === activeCandle ? 'duration-[2500ms]' : 'duration-100'}`}
                 style={{
                   bottom: '20px',
-                  left: '20%',
-                  transform: 'translateX(-50%)'
+                  left: `${candle.position}px`,
+                  transform: 'translateX(-50%)',
+                  opacity: index === activeCandle ? 1 : (index < activeCandle ? 0.8 : 0.4)
                 }}
               >
                 {/* Candle wick - top line */}
                 <div 
-                  className="absolute left-1/2 -translate-x-1/2 w-1 bg-[#00FF00]"
+                  className="absolute left-1/2 -translate-x-1/2 w-1"
                   style={{
+                    backgroundColor: candle.isGreen ? '#00FF00' : '#FF4081',
                     height: '10px',
-                    bottom: `calc(${Math.min(multiplier * 20, 190)}px + 5px)`,
-                    opacity: 0.8
+                    bottom: `calc(${index === activeCandle ? Math.min(multiplier * 20, 190) : candle.height}px + 5px)`,
+                    opacity: 0.8,
+                    transition: index === activeCandle ? 'height 0.2s ease-in-out' : 'none'
                   }}
                 ></div>
                 
                 {/* Candle body */}
                 <div 
-                  className="transition-all duration-100 shadow-[0_0_15px_rgba(0,255,0,0.5)]"
+                  className={`transition-all ${index === activeCandle ? 'shadow-[0_0_15px_rgba(0,255,0,0.5)]' : ''}`}
                   style={{
-                    width: '12px',
-                    height: `${Math.min(multiplier * 20, 190)}px`,
-                    backgroundColor: '#00FF00',
-                    opacity: 0.8
+                    width: `${candle.width}px`,
+                    height: index === activeCandle ? `${Math.min(multiplier * 20, 190)}px` : `${candle.height}px`,
+                    backgroundColor: candle.isGreen ? '#00FF00' : '#FF4081',
+                    opacity: candle.isGreen ? 0.8 : 0.7,
+                    transition: index === activeCandle ? 'height 0.2s ease-in-out' : 'none'
                   }}
                 ></div>
               </div>
-            )}
+            ))}
             
             {/* Green line path when game is running */}
             {isRunning && !hasCrashed && (
@@ -400,7 +414,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
           <div className="text-lg text-gray-300">
             {hasUserCashedOut && (
               <span className="text-[#00FF00]">
-                You won {(betAmount * (cashOutMultiplier || 0)).toFixed(2)} ATOM!
+                You won {(betAmount * (cashOutMultiplier || 0)).toFixed(2)} {selectedToken}!
               </span>
             )}
           </div>
@@ -436,13 +450,22 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                 className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-2 focus:border-[#FFD700] focus:outline-none pr-16"
                 disabled={isRunning}
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">ATOM</div>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <Button 
+                  variant="ghost"
+                  className="h-6 px-1 py-0 text-xs text-gray-400 hover:text-white"
+                  onClick={toggleToken}
+                  disabled={isRunning}
+                >
+                  {selectedToken}
+                </Button>
+              </div>
             </div>
           </div>
           <div>
             <label className="text-sm text-gray-400 block mb-2">Potential Win</label>
             <div className="bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-2 text-[#FFD700] flex items-center h-10">
-              {potentialWin.toFixed(2)} ATOM
+              {potentialWin.toFixed(2)} {selectedToken}
             </div>
           </div>
         </div>
@@ -457,6 +480,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
         isOpen={showWinModal}
         onClose={() => setShowWinModal(false)}
         amount={cashOutMultiplier ? betAmount * cashOutMultiplier : 0}
+        currency={selectedToken}
         onPlayAgain={handlePlayAgain}
         onDoubleDown={handleDoubleDown}
       />

@@ -8,6 +8,7 @@ interface WinModalProps {
   isOpen: boolean;
   onClose: () => void;
   amount: number;
+  currency?: string;
   onPlayAgain: () => void;
   onDoubleDown: () => void;
 }
@@ -16,6 +17,7 @@ const WinModal: React.FC<WinModalProps> = ({
   isOpen, 
   onClose, 
   amount, 
+  currency = 'ETH',
   onPlayAgain, 
   onDoubleDown 
 }) => {
@@ -40,7 +42,7 @@ const WinModal: React.FC<WinModalProps> = ({
         
         <div className="mb-8">
           <div className="text-5xl font-poppins font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FFD700] to-[#FF4081] mb-2">
-            +{amount.toFixed(2)} ATOM
+            +{amount.toFixed(2)} {currency}
           </div>
           <div className="text-gray-400">Your balance has been updated</div>
         </div>
