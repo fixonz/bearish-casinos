@@ -477,36 +477,7 @@ export const useCrash = () => {
     isConnected: boolean
   }>>([
     // Default dummy players to ensure game is never empty
-    {
-      id: 'player1',
-      betAmount: 0.05,
-      username: 'CryptoBull',
-      profilePicture: '/attached_assets/Y2HmxLIx_400x400.jpg',
-      hasJoined: true,
-      hasCashedOut: false,
-      cashOutMultiplier: null,
-      isConnected: true
-    },
-    {
-      id: 'player2',
-      betAmount: 0.1,
-      username: 'MoonHodler',
-      profilePicture: '/attached_assets/processed-nft-33-1-dark (1).png',
-      hasJoined: true,
-      hasCashedOut: false,
-      cashOutMultiplier: null,
-      isConnected: true
-    },
-    {
-      id: 'player3',
-      betAmount: 0.02,
-      username: 'DiamondHands',
-      profilePicture: '/attached_assets/bearishshs.png',
-      hasJoined: true,
-      hasCashedOut: false,
-      cashOutMultiplier: null,
-      isConnected: true
-    }
+    // Real players will be populated here from the backend
   ]);
   const [gameStartCountdown, setGameStartCountdown] = useState<number | null>(null);
   const [nextGameTimestamp, setNextGameTimestamp] = useState<Date | null>(null);

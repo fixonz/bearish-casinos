@@ -55,8 +55,8 @@ contract CrashGame is AbstractCasinoBase {
      * @param _minBet The minimum bet amount
      * @param _maxBet The maximum bet amount
      */
-    constructor(uint256 _houseEdge, uint256 _minBet, uint256 _maxBet) 
-        AbstractCasinoBase(_houseEdge, _minBet, _maxBet) {
+    constructor() 
+        AbstractCasinoBase(250, ethers.parseEther("0.0025"), ethers.parseEther("0.5")) {
         // Initialize the first game seed
         bytes32 seed = keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1), msg.sender));
         _createNewGame(seed);

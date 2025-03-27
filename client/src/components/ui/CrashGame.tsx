@@ -507,23 +507,24 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
         <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#FF4081] bg-opacity-10 rounded-full"></div>
       </div>
       
-      {/* Player Profiles and Chat UI */}
+      {/* Real-time Game Chat */}
       <Card className="mt-6 bg-[#1a1a1a] p-0 overflow-hidden shadow-xl relative">
-        <Tabs defaultValue="players" className="w-full">
-          <TabsList className="w-full bg-[#121212] rounded-none grid grid-cols-3">
-            <TabsTrigger value="players" className="data-[state=active]:bg-[#1a1a1a]">
-              <Users2Icon className="w-4 h-4 mr-2" />
-              Players
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="data-[state=active]:bg-[#1a1a1a]">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Live Chat</h3>
+            <Button variant="ghost" size="sm">
               <MessageSquareIcon className="w-4 h-4 mr-2" />
               Chat
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-[#1a1a1a]">
-              <Settings2Icon className="w-4 h-4 mr-2" />
-              Profile
-            </TabsTrigger>
-          </TabsList>
+            </Button>
+          </div>
+          <div className="h-[200px] overflow-y-auto mb-4 space-y-2">
+            {/* Real chat messages will be rendered here */}
+          </div>
+          <div className="flex gap-2">
+            <Input placeholder="Type a message..." className="flex-1" />
+            <Button>Send</Button>
+          </div>
+        </div>
           
           {/* Players Tab */}
           <TabsContent value="players" className="m-0">
