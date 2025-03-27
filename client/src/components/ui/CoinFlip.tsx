@@ -5,6 +5,10 @@ import { useWalletContext } from '@/context/WalletContext';
 import { useCoinFlip } from '@/hooks/useRandomization';
 import { useToast } from '@/hooks/use-toast';
 import WinModal from '@/components/modals/WinModal';
+import ProvablyFairModal from '@/components/modals/ProvablyFairModal';
+import { provablyFair } from '@/lib/provablyFair';
+import { AlertCircle, Info, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import headImg from '@assets/head.png';
 import tailsImg from '@assets/taills.png';
 
@@ -14,17 +18,31 @@ interface CoinFlipProps {
 }
 
 const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
-  const { wallet, placeBet, addWinnings } = useWalletContext();
+  const { wallet, placeBet, addWinnings, playCoinFlip } = useWalletContext();
   const { toast } = useToast();
-  const { isFlipping, result, selectedSide, hasWon, flip } = useCoinFlip();
+  const { 
+    isFlipping, 
+    result, 
+    selectedSide, 
+    hasWon, 
+    history, 
+    verificationData,
+    flip,
+    setClientSeed
+  } = useCoinFlip();
   
   const [betAmount, setBetAmount] = useState(1.0);
   const [potentialWin, setPotentialWin] = useState(2.0);
   const [showWinModal, setShowWinModal] = useState(false);
+  const [useBlockchainVerification, setUseBlockchainVerification] = useState(false);
   
   // Update potential win when bet amount changes
   useEffect(() => {
-    setPotentialWin(parseFloat((betAmount * 2).toFixed(2)));
+    // Calculate potential win with a 2.5% house edge
+    const houseEdge = 0.025; // 2.5%
+    const fairMultiplier = 2; // 1:1 odds for coin flip
+    const actualMultiplier = fairMultiplier * (1 - houseEdge); // Apply house edge
+    setPotentialWin(parseFloat((betAmount * actualMultiplier).toFixed(2)));
   }, [betAmount]);
 
   // Handle bet amount change
@@ -36,7 +54,7 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
   };
 
   // Handle flip button click
-  const handleFlip = (side: 'heads' | 'tails') => {
+  const handleFlip = async (side: 'heads' | 'tails') => {
     if (isFlipping) return;
     
     if (!wallet.isConnected) {
@@ -57,11 +75,32 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
       return;
     }
     
-    // Place the bet
-    placeBet(betAmount);
-    
-    // Flip the coin
-    flip(side);
+    if (useBlockchainVerification) {
+      // Use the blockchain version
+      try {
+        // The playCoinFlip function handles the bet placement internally
+        const result = await playCoinFlip(side === 'heads', betAmount);
+        
+        if (result.success && result.won) {
+          setShowWinModal(true);
+        }
+        
+      } catch (error) {
+        console.error('Error flipping coin with blockchain:', error);
+        toast({
+          title: "Error",
+          description: "There was an error processing your bet on the blockchain.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Use the local provably fair version
+      // Place the bet
+      placeBet(betAmount);
+      
+      // Flip the coin
+      flip(side);
+    }
   };
 
   // Effect to handle win/loss after flip
@@ -97,6 +136,28 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
   return (
     <>
       <div className="game-preview bg-[#1a1a1a] rounded-xl p-6 text-center relative overflow-hidden">
+        {/* Header with Provably Fair Badge */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-left">Coin Flip</h2>
+          <ProvablyFairModal 
+            defaultClientSeed={verificationData?.clientSeed || provablyFair.getClientSeed()}
+            onClientSeedChange={setClientSeed}
+          />
+        </div>
+        
+        {/* Verification Badge Alert */}
+        <Alert className="mb-6 bg-[#252525] border-[#3a3a3a] text-left">
+          <ShieldCheck className="h-4 w-4 text-[#00c853]" />
+          <AlertDescription className="text-sm">
+            This game uses provably fair technology. Server seed hash: {" "}
+            <code className="text-xs bg-[#333] p-1 rounded">
+              {verificationData?.serverSeedHash ? 
+                `${verificationData.serverSeedHash.substring(0, 10)}...` : 
+                'Generating...'}
+            </code>
+          </AlertDescription>
+        </Alert>
+        
         {/* Animated coin element */}
         <div className={`coin mb-6 ${isFlipping ? 'flipping' : ''}`}>
           <div className="coin-front flex items-center justify-center">
@@ -116,6 +177,7 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
               'Choose Heads or Tails!'}
           </div>
           <div className="text-lg text-gray-300">
+            {result && !isFlipping && `The result was ${result}!`}
             {hasWon && <span className="text-[#00FF00]">You won {potentialWin.toFixed(2)} ATOM!</span>}
           </div>
         </div>
@@ -144,7 +206,7 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
         </div>
         
         {/* Bet controls */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
             <label className="text-sm text-gray-400 block mb-2">Bet Amount</label>
             <div className="relative">
@@ -166,6 +228,42 @@ const CoinFlip: React.FC<CoinFlipProps> = ({ maxBet = 1000, minBet = 0.1 }) => {
             <div className="bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-2 text-[#FFD700] flex items-center h-10">
               {potentialWin.toFixed(2)} ATOM
             </div>
+          </div>
+        </div>
+        
+        {/* Recent Results */}
+        {history && history.length > 0 && (
+          <div className="mb-6 text-left">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Recent Results</h3>
+            <div className="flex flex-wrap gap-2">
+              {history.slice(0, 10).map((item, index) => (
+                <div 
+                  key={index} 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                    item.won ? 'bg-green-600' : 'bg-red-600'
+                  }`}
+                  title={`${item.selectedSide} → ${item.result} (${item.won ? 'Won' : 'Lost'})`}
+                >
+                  {item.result === 'heads' ? 'H' : 'T'}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Blockchain verification toggle */}
+        <div className="flex items-center justify-center mt-6">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="blockchainVerification"
+              checked={useBlockchainVerification}
+              onChange={() => setUseBlockchainVerification(!useBlockchainVerification)}
+              className="rounded border-gray-600 text-[#FFD700] focus:ring-[#FFD700]"
+            />
+            <label htmlFor="blockchainVerification" className="text-sm text-gray-400">
+              Use Abstract Blockchain Verification {useBlockchainVerification && '(Testnet)'}
+            </label>
           </div>
         </div>
         

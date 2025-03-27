@@ -1,37 +1,296 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { provablyFair, ProvablyFair } from '@/lib/provablyFair';
 
-// Generate a random number between min and max (inclusive)
+/**
+ * Generate a random number between min and max (inclusive)
+ * Note: For non-critical RNG where provable fairness is not required
+ */
 export const getRandomNumber = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-// Coin flip hook
+/**
+ * Provably fair coin flip hook
+ * Uses the provably fair algorithm to ensure verifiable results
+ */
 export const useCoinFlip = () => {
   const [result, setResult] = useState<'heads' | 'tails' | null>(null);
+  const [selectedSide, setSelectedSide] = useState<'heads' | 'tails' | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
-  const [history, setHistory] = useState<Array<{ result: 'heads' | 'tails', timestamp: Date }>>([]);
-  
-  const flip = useCallback(() => {
+  const [hasWon, setHasWon] = useState<boolean | null>(null);
+
+  // Keep track of game history for statistical purposes
+  const [history, setHistory] = useState<Array<{
+    result: 'heads' | 'tails';
+    selectedSide: 'heads' | 'tails';
+    timestamp: Date;
+    won: boolean;
+    serverSeed?: string;
+    clientSeed?: string;
+    nonce?: number;
+    serverSeedHash?: string;
+  }>>([]);
+
+  // Store verification data for the current game
+  const [verificationData, setVerificationData] = useState<{
+    serverSeedHash: string;
+    clientSeed: string;
+    nonce: number;
+    serverSeed?: string;
+  } | null>(null);
+
+  // Get the server seed hash before playing
+  useEffect(() => {
+    // Initialize with the provably fair system's server seed hash
+    setVerificationData({
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: provablyFair.getClientSeed(),
+      nonce: provablyFair.getNonce()
+    });
+  }, []);
+
+  /**
+   * Flip the coin with a specific side selected
+   * @param side - The side (heads or tails) the player is betting on
+   */
+  const flip = useCallback((side: 'heads' | 'tails') => {
+    if (isFlipping) return;
+
     setIsFlipping(true);
+    setSelectedSide(side);
+
+    // Store current verification data for this game
+    const currentVerificationData = {
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: provablyFair.getClientSeed(),
+      nonce: provablyFair.getNonce()
+    };
+    
+    setVerificationData(currentVerificationData);
+
     // Simulate coin flip animation delay
     setTimeout(() => {
-      const flipResult = Math.random() < 0.5 ? 'heads' : 'tails';
+      // Use the provably fair algorithm to determine the result
+      const { isHeads, seed } = provablyFair.calculateCoinFlip();
+      const flipResult = isHeads ? 'heads' : 'tails';
+      
       setResult(flipResult);
-      setHistory(prev => [{ result: flipResult as 'heads' | 'tails', timestamp: new Date() }, ...prev].slice(0, 10));
+      const won = side === flipResult;
+      setHasWon(won);
+
+      // After the game, get the revealed server seed for verification
+      const revealed = provablyFair.revealServerSeed();
+      
+      // Add the result to history
+      setHistory(prev => [
+        {
+          result: flipResult as 'heads' | 'tails',
+          selectedSide: side,
+          timestamp: new Date(),
+          won,
+          serverSeed: revealed.serverSeed,
+          clientSeed: currentVerificationData.clientSeed,
+          nonce: revealed.nonce,
+          serverSeedHash: currentVerificationData.serverSeedHash
+        },
+        ...prev
+      ].slice(0, 10));
+
+      // Generate a new server seed for the next game
+      provablyFair.generateServerSeed();
+      
+      // Update verification data with the new server seed hash
+      setVerificationData({
+        serverSeedHash: provablyFair.getServerSeedHash(),
+        clientSeed: provablyFair.getClientSeed(),
+        nonce: provablyFair.getNonce()
+      });
+      
       setIsFlipping(false);
     }, 1500);
+  }, [isFlipping]);
+
+  /**
+   * Set a custom client seed for added randomness
+   * @param seed - The client provided seed
+   */
+  const setClientSeed = useCallback((seed: string) => {
+    provablyFair.setClientSeed(seed);
+    setVerificationData({
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: seed,
+      nonce: provablyFair.getNonce()
+    });
   }, []);
-  
+
   return {
     result,
+    selectedSide,
     isFlipping,
+    hasWon,
     history,
-    flip
+    verificationData,
+    flip,
+    setClientSeed
   };
 };
 
-// Dice roll hook
-export const useDiceRoll = () => {
+/**
+ * Provably fair dice roll hook
+ * Uses the provably fair algorithm to ensure verifiable results
+ */
+export const useDiceRoll = (minValue: number = 1, maxValue: number = 100) => {
+  const [result, setResult] = useState<number | null>(null);
+  const [target, setTarget] = useState<number>(50);
+  const [betType, setBetType] = useState<'over' | 'under'>('over');
+  const [isRolling, setIsRolling] = useState(false);
+  const [hasWon, setHasWon] = useState<boolean | null>(null);
+  
+  // Keep track of game history
+  const [history, setHistory] = useState<Array<{
+    result: number;
+    target: number;
+    betType: 'over' | 'under';
+    timestamp: Date;
+    won: boolean;
+    serverSeed?: string;
+    clientSeed?: string;
+    nonce?: number;
+  }>>([]);
+
+  // Store verification data for the current game
+  const [verificationData, setVerificationData] = useState<{
+    serverSeedHash: string;
+    clientSeed: string;
+    nonce: number;
+    serverSeed?: string;
+  } | null>(null);
+
+  // Initialize verification data
+  useEffect(() => {
+    setVerificationData({
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: provablyFair.getClientSeed(),
+      nonce: provablyFair.getNonce()
+    });
+  }, []);
+
+  /**
+   * Roll the dice for a specific target and bet type
+   * @param selectedTarget - The target number
+   * @param selectedBetType - Whether the player is betting over or under
+   */
+  const roll = useCallback((selectedTarget: number, selectedBetType: 'over' | 'under') => {
+    if (isRolling) return;
+
+    setIsRolling(true);
+    setTarget(selectedTarget);
+    setBetType(selectedBetType);
+
+    // Store current verification data
+    const currentVerificationData = {
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: provablyFair.getClientSeed(),
+      nonce: provablyFair.getNonce()
+    };
+    
+    setVerificationData(currentVerificationData);
+
+    // Simulate dice roll animation delay
+    setTimeout(() => {
+      // Use provably fair algorithm to determine the result
+      const { roll, seed } = provablyFair.calculateDiceRoll(minValue, maxValue);
+      
+      setResult(roll);
+      
+      // Determine if player won based on bet type and target
+      const won = selectedBetType === 'over' 
+        ? roll > selectedTarget 
+        : roll < selectedTarget;
+      
+      setHasWon(won);
+
+      // After the game, get the revealed server seed
+      const revealed = provablyFair.revealServerSeed();
+      
+      // Add the result to history
+      setHistory(prev => [
+        {
+          result: roll,
+          target: selectedTarget,
+          betType: selectedBetType,
+          timestamp: new Date(),
+          won,
+          serverSeed: revealed.serverSeed,
+          clientSeed: currentVerificationData.clientSeed,
+          nonce: revealed.nonce
+        },
+        ...prev
+      ].slice(0, 10));
+
+      // Generate a new server seed for the next game
+      provablyFair.generateServerSeed();
+      
+      // Update verification data
+      setVerificationData({
+        serverSeedHash: provablyFair.getServerSeedHash(),
+        clientSeed: provablyFair.getClientSeed(),
+        nonce: provablyFair.getNonce()
+      });
+      
+      setIsRolling(false);
+    }, 1500);
+  }, [isRolling, minValue, maxValue]);
+
+  /**
+   * Set a custom client seed
+   */
+  const setClientSeed = useCallback((seed: string) => {
+    provablyFair.setClientSeed(seed);
+    setVerificationData({
+      serverSeedHash: provablyFair.getServerSeedHash(),
+      clientSeed: seed,
+      nonce: provablyFair.getNonce()
+    });
+  }, []);
+
+  /**
+   * Calculate win probability based on target and bet type
+   */
+  const getWinProbability = useCallback((targetNum: number, betTypeVal: 'over' | 'under'): number => {
+    if (betTypeVal === 'over') {
+      return (maxValue - targetNum) / (maxValue - minValue + 1) * 100;
+    } else {
+      return (targetNum - minValue) / (maxValue - minValue + 1) * 100;
+    }
+  }, [minValue, maxValue]);
+
+  /**
+   * Calculate payout multiplier based on win probability and house edge
+   */
+  const getPayoutMultiplier = useCallback((winProbability: number): number => {
+    const houseEdge = 0.025; // 2.5% house edge
+    const fairMultiplier = 100 / winProbability;
+    return fairMultiplier * (1 - houseEdge);
+  }, []);
+
+  return {
+    result,
+    target,
+    betType,
+    isRolling,
+    hasWon,
+    history,
+    verificationData,
+    roll,
+    setClientSeed,
+    getWinProbability,
+    getPayoutMultiplier
+  };
+};
+
+// Simple dice roll hook for traditional dice (1-6)
+export const useSimpleDiceRoll = () => {
   const [dice, setDice] = useState<number[]>([1]);
   const [isRolling, setIsRolling] = useState(false);
   const [history, setHistory] = useState<Array<{ dice: number[], timestamp: Date }>>([]);
