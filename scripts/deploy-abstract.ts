@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Environment variable checking
-const requiredEnvVars = ['ABSTRACT_RPC_URL', 'PRIVATE_KEY', 'PYTH_ENTROPY_ADDRESS'];
+const requiredEnvVars = ['PRIVATE_KEY'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.error(`Error: Missing required environment variable ${envVar}`);
@@ -27,14 +27,29 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+// Get RPC URL from environment
+const rpcUrl = process.env.ABSTRACT_RPC_URL || process.env.RPC_URL || "https://11124.rpc.thirdweb.com";
+const chainId = parseInt(process.env.CHAIN_ID || "11124");
+
 async function main() {
   try {
     // Connect to the blockchain
-    const provider = new ethers.JsonRpcProvider(process.env.ABSTRACT_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(rpcUrl, chainId);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
     
     console.log("Deploying contracts to Abstract Network with address:", wallet.address);
-    console.log("Network:", await provider.getNetwork());
+    
+    try {
+      // Get network information
+      const network = await provider.getNetwork();
+      console.log(`Connected to network: ${network.name} (Chain ID: ${network.chainId})`);
+      
+      // Get wallet balance
+      const balance = await provider.getBalance(wallet.address);
+      console.log(`Wallet balance: ${ethers.formatEther(balance)} ETH`);
+    } catch (error: any) {
+      console.warn(`Warning: Could not fetch network info: ${error.message}`);
+    }
 
     // For simulation purposes, we'll create mock contract addresses
     // In a real deployment, these would be actual deployed contracts

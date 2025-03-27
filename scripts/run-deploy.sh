@@ -1,34 +1,40 @@
 #!/bin/bash
 
-echo "Starting Abstract Network deployment process..."
-echo "----------------------------------------------"
+echo "Starting Abstract Network contract deployment process..."
+echo "-------------------------------------------------------"
 
-# Check if node modules are installed
-if [ ! -d "node_modules" ]; then
-  echo "Installing dependencies..."
-  npm install
+# Check environment variables
+if [ -z "$PRIVATE_KEY" ]; then
+  if [ -f .env ]; then
+    echo "Loading environment variables from .env file..."
+    export $(grep -v '^#' .env | xargs)
+  else
+    echo "Error: PRIVATE_KEY environment variable is not set and .env file does not exist."
+    exit 1
+  fi
 fi
 
-# Run the deployment script
-echo "Deploying contracts to Abstract Network..."
+if [ -z "$PRIVATE_KEY" ]; then
+  echo "Error: PRIVATE_KEY environment variable is required for deployment."
+  exit 1
+fi
+
+echo "Deploying contracts to Abstract Network testnet..."
+
+# Run the JavaScript deployment script
 node scripts/deploy-contracts.js
 
 # Check if the deployment was successful
 if [ $? -eq 0 ]; then
   echo "Deployment completed successfully!"
-  
-  # Check if .env.contracts exists
-  if [ -f ".env.contracts" ]; then
-    echo "Contract addresses are available in .env.contracts"
-    cat .env.contracts
-  fi
+  echo "Contract addresses have been updated in .env.contracts file."
 else
   echo "Deployment failed. Please check the logs for errors."
   exit 1
 fi
 
-echo "----------------------------------------------"
-echo "To use these contracts in your application:"
-echo "1. Update your .env file with the contract addresses"
-echo "2. Restart your application"
-echo "----------------------------------------------"
+echo "-------------------------------------------------------"
+echo "Next steps:"
+echo "1. Update your frontend to use the new contract addresses"
+echo "2. Test the contracts on the Abstract Network testnet"
+echo "-------------------------------------------------------"

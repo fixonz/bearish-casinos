@@ -7,30 +7,30 @@ import {
 import { defineChain } from 'viem';
 
 // Define Abstract Network chain using viem's defineChain
-const abstractMainnet = defineChain({
-  id: 433,
-  name: 'Abstract',
-  network: 'abstract-mainnet',
+export const abstractNetwork = defineChain({
+  id: 11124,
+  name: 'Abstract Testnet',
+  network: 'abstract-testnet',
   nativeCurrency: {
-    decimals: 6,
-    name: 'ATOM',
-    symbol: 'ATOM',
+    decimals: 18,
+    name: 'ETH',
+    symbol: 'ETH',
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.abstract.money'],
+      http: ['https://11124.rpc.thirdweb.com'],
     },
     public: {
-      http: ['https://rpc.abstract.money'],
+      http: ['https://11124.rpc.thirdweb.com'],
     },
   },
   blockExplorers: {
     default: { 
-      name: 'Abstract Explorer', 
-      url: 'https://explorer.abstract.money' 
+      name: 'ThirdWeb Explorer', 
+      url: 'https://11124.explorer.thirdweb.com' 
     },
   },
-  testnet: false,
+  testnet: true,
 });
 
 // Get WalletConnect Project ID from environment or use fallback if not available
@@ -40,9 +40,9 @@ const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 
 export const wagmiConfig = getDefaultConfig({
   appName: 'Bear Casino',
   projectId: walletConnectProjectId,
-  chains: [abstractMainnet, mainnet, sepolia],
+  chains: [abstractNetwork, mainnet, sepolia],
   transports: {
-    [abstractMainnet.id]: http('https://rpc.abstract.money'),
+    [abstractNetwork.id]: http('https://11124.rpc.thirdweb.com'),
     [mainnet.id]: http(),
     [sepolia.id]: http(),
   },

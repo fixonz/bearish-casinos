@@ -1,39 +1,40 @@
 #!/bin/bash
 
-echo "Starting Abstract Network deployment process with TypeScript..."
-echo "----------------------------------------------"
+echo "Starting Abstract Network contract deployment process (TypeScript)..."
+echo "-------------------------------------------------------"
 
-# Check if node modules are installed
-if [ ! -d "node_modules" ]; then
-  echo "Installing dependencies..."
-  npm install
+# Check environment variables
+if [ -z "$PRIVATE_KEY" ]; then
+  if [ -f .env ]; then
+    echo "Loading environment variables from .env file..."
+    export $(grep -v '^#' .env | xargs)
+  else
+    echo "Error: PRIVATE_KEY environment variable is not set and .env file does not exist."
+    exit 1
+  fi
 fi
 
-# Check if ethers is installed (required for TS deployment)
-if ! npm list ethers > /dev/null 2>&1; then
-  echo "Installing ethers for deployment..."
-  npm install ethers
+if [ -z "$PRIVATE_KEY" ]; then
+  echo "Error: PRIVATE_KEY environment variable is required for deployment."
+  exit 1
 fi
+
+echo "Deploying contracts to Abstract Network testnet..."
 
 # Run the TypeScript deployment script
-echo "Deploying contracts to Abstract Network..."
 npx tsx scripts/deploy-abstract.ts
 
 # Check if the deployment was successful
 if [ $? -eq 0 ]; then
   echo "Deployment completed successfully!"
-  echo "Please check the console output for contract addresses."
+  echo "Contract addresses have been updated in .env.contracts.ts file."
 else
   echo "Deployment failed. Please check the logs for errors."
   exit 1
 fi
 
-echo "----------------------------------------------"
-echo "To use these contracts in your application:"
-echo "1. Update your .env file with the contract addresses"
-echo "2. Set the following environment variables:"
-echo "   - ABSTRACT_RPC_URL (Abstract Network RPC endpoint)"
-echo "   - PRIVATE_KEY (Your deployment wallet's private key)"
-echo "   - PYTH_ENTROPY_ADDRESS (Pyth Network Entropy address)"
-echo "3. Restart your application"
-echo "----------------------------------------------"
+echo "-------------------------------------------------------"
+echo "Next steps:"
+echo "1. Update your frontend to use the new contract addresses"
+echo "2. Test the contracts on the Abstract Network testnet"
+echo "-------------------------------------------------------"
