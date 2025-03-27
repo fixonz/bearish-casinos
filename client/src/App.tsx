@@ -9,6 +9,8 @@ import SlotsGame from "@/pages/SlotsGame";
 import CrashGame from "@/pages/CrashGame";
 import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
+import { WalletProvider } from "@/context/WalletContext";
+import { GamesProvider } from "@/context/GamesContext";
 
 function Router() {
   return (
@@ -27,8 +29,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <GamesProvider>
+        <WalletProvider>
+          <Router />
+          <Toaster />
+        </WalletProvider>
+      </GamesProvider>
     </QueryClientProvider>
   );
 }

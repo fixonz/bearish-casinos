@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
 import { Wallet } from '../types';
 
 interface WalletContextType {
@@ -29,9 +29,9 @@ const WalletContext = createContext<WalletContextType>(defaultWalletContext);
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // State for the wallet
   const [wallet, setWallet] = useState<Wallet>({
-    address: '',
-    balance: 0,
-    isConnected: false
+    address: 'abst1demo123456',
+    balance: 1000,
+    isConnected: true
   });
 
   const connectWallet = useCallback(async () => {
