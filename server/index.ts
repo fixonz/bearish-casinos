@@ -37,6 +37,26 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migration script if DB_MIGRATE environment variable is set
+  if (process.env.DB_MIGRATE === 'true') {
+    console.log('Running database migration before server start');
+    const { exec } = await import('child_process');
+    
+    const migrate = exec('node scripts/migrate-db.js');
+    
+    migrate.stdout?.on('data', (data: string) => {
+      console.log(`[Migration] ${data}`);
+    });
+    
+    migrate.stderr?.on('data', (data: string) => {
+      console.error(`[Migration Error] ${data}`);
+    });
+    
+    migrate.on('close', (code: number) => {
+      console.log(`Migration process exited with code ${code}`);
+    });
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

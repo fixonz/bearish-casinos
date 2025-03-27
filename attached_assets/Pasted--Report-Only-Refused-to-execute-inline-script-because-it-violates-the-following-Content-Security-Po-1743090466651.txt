@@ -1,0 +1,50 @@
+[Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-AXDFbK9VtT2i8AP43XgFO9xL5hN6M1+DEDkfE8/ZW5A='), or a nonce ('nonce-...') is required to enable inline execution.
+
+/~:144 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-Q2BC+6wvEMMGAG5ptiy0mdlUVz5ymLU+2wnaD11rhyc='), or a nonce ('nonce-...') is required to enable inline execution.
+
+/~:147 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-XYvVliZ7kJ9JIDhACMzGUvidf8E8T+euknSiwFmyDfg='), or a nonce ('nonce-...') is required to enable inline execution.
+
+/~:147 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-q0uYXd/EjY8dh9TMB0fCzZ6buPPvS6FpeCcVGhF/1dU='), or a nonce ('nonce-...') is required to enable inline execution.
+
+/~:147 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-IB9Zu16iF5/nv5oYCLOZXRBz+KK26ZgEpM0y7Jo0hw8='), or a nonce ('nonce-...') is required to enable inline execution.
+
+/~:147 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-07l5B4sWF6cor6yDQ+CQBYw+BXfYaB+C6wxFZmj0wqo='), or a nonce ('nonce-...') is required to enable inline execution.
+
+120[Report Only] Refused to load the script '<URL>' because it violates the following Content Security Policy directive: "script-src 'none'". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+VM32 ~:4 [Report Only] Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'none'". Either the 'unsafe-inline' keyword, a hash ('sha256-oYWwBc09SvWv7bl3QueQb/RtarF+XV9gMwpafB6Ijik='), or a nonce ('nonce-...') is required to enable inline execution.
+
+_app-71b298e1d6c55faf.js:1 [Report Only] Refused to create a worker from 'https://replit.com/public/stallwart.build.js' because it violates the following Content Security Policy directive: "script-src 'none'". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback.
+
+7023 @ _app-71b298e1d6c55faf.js:1
+6511-ba07bf4f1eff27d7.js:1 [Report Only] Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: "script-src 'none'".
+
+inquire @ 6511-ba07bf4f1eff27d7.js:1
+6511-ba07bf4f1eff27d7.js:1 [Report Only] Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: "script-src 'none'".
+
+inquire @ 6511-ba07bf4f1eff27d7.js:1
+_app-71b298e1d6c55faf.js:15 [Report Only] Refused to create a worker from 'https://replit.com/service-worker.js' because it violates the following Content Security Policy directive: "script-src 'none'". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback.
+
+(anonymous) @ _app-71b298e1d6c55faf.js:15
+attached_assets/Y2HmxLIx_400x400.jpg:1 
+        
+        
+       Failed to load resource: the server responded with a status of 404 ()
+attached_assets/taills.png:1 
+        
+        
+       Failed to load resource: the server responded with a status of 404 ()
+11Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-c868ee18c66c03d3.js:1 Unable to preventDefault inside passive event listener invocation.
+preventDefault @ framework-c868ee18c66c03d3.js:1
+3_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-71b298e1d6c55faf.js:13
+_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//#rewards' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-71b298e1d6c55faf.js:13
+_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//#games' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-71b298e1d6c55faf.js:13
+2_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-71b298e1d6c55faf.js:13
+_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//#games' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-71b298e1d6c55faf.js:13
+_app-71b298e1d6c55faf.js:13 Invalid href 'https://06c571ac-b89d-4565-96f0-e77443b00e62-00-2twxp30r4wjth.spock.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.

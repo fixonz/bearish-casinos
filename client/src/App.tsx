@@ -7,6 +7,7 @@ import CoinFlipGame from "@/pages/CoinFlipGame";
 import DiceGame from "@/pages/DiceGame";
 import SlotsGame from "@/pages/SlotsGame";
 import CrashGame from "@/pages/CrashGame";
+import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/games/dice" component={DiceGame} />
       <Route path="/games/slots" component={SlotsGame} />
       <Route path="/games/crash" component={CrashGame} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

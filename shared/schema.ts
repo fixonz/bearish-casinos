@@ -15,7 +15,8 @@ export const users = pgTable("users", {
   losses: integer("losses").notNull().default(0),
   totalWagered: doublePrecision("total_wagered").notNull().default(0),
   bestMultiplier: doublePrecision("best_multiplier").notNull().default(0),
-  joinedAt: timestamp("joined_at").notNull().defaultNow()
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  walletAddress: text("wallet_address")
 });
 
 // Games table
@@ -48,7 +49,8 @@ export const gameResults = pgTable("game_results", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
-  balance: true
+  balance: true,
+  walletAddress: true
 });
 
 export const insertGameSchema = createInsertSchema(games).pick({

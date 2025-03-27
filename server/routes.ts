@@ -1,8 +1,25 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, initStorage } from "./storage";
+import { checkDatabaseConnection } from "./db";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Check if the database connection is available
+  try {
+    const isDbConnected = await checkDatabaseConnection();
+    if (isDbConnected) {
+      // Initialize the PostgreSQL storage
+      const pgStorage = await initStorage();
+      console.log('Using PostgreSQL storage for data persistence');
+      (global as any).storage = pgStorage;
+    } else {
+      console.log('Using in-memory storage (database connection failed)');
+    }
+  } catch (error) {
+    console.error('Error checking database connection:', error);
+    console.log('Falling back to in-memory storage');
+  }
+  
   // API Routes prefix with /api
   
   // Get games list
@@ -123,6 +140,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedUser);
     } catch (error) {
       res.status(500).json({ message: 'Failed to update user balance' });
+    }
+  });
+  
+  // Admin API routes
+  
+  // Run database migration
+  app.post('/api/admin/run-migration', (req, res) => {
+    try {
+      // Set environment variable for triggering migration
+      process.env.DB_MIGRATE = 'true';
+      
+      // Execute the migration script
+      const { exec } = require('child_process');
+      
+      const migrate = exec('node scripts/migrate-db.js');
+      
+      let stdoutData = '';
+      let stderrData = '';
+      
+      migrate.stdout.on('data', (data: string) => {
+        console.log(`[Migration] ${data}`);
+        stdoutData += data;
+      });
+      
+      migrate.stderr.on('data', (data: string) => {
+        console.error(`[Migration Error] ${data}`);
+        stderrData += data;
+      });
+      
+      migrate.on('close', (code: number) => {
+        console.log(`Migration process exited with code ${code}`);
+        
+        // Reset environment variable
+        process.env.DB_MIGRATE = 'false';
+        
+        if (code === 0) {
+          res.json({ 
+            message: 'Database migration completed successfully',
+            details: stdoutData
+          });
+        } else {
+          res.status(500).json({ 
+            message: 'Database migration failed',
+            details: stderrData || stdoutData
+          });
+        }
+      });
+      
+      // Do not reset the environment variable here as the migration is async
+    } catch (error) {
+      console.error('Migration execution error:', error);
+      res.status(500).json({ 
+        message: 'Failed to execute migration script',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Wallet API routes
+  
+  // Get user by wallet address
+  app.get('/api/wallet/:address', async (req, res) => {
+    try {
+      const user = await storage.getWalletByAddress(req.params.address);
+      if (!user) {
+        return res.status(404).json({ message: 'No user found with this wallet address' });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to retrieve user by wallet address' });
+    }
+  });
+  
+  // Connect wallet to user
+  app.post('/api/wallet/connect', async (req, res) => {
+    try {
+      const { userId, walletAddress } = req.body;
+      
+      if (!userId || !walletAddress) {
+        return res.status(400).json({ message: 'User ID and wallet address are required' });
+      }
+      
+      // Check if wallet already connected to another user
+      const existingWallet = await storage.getWalletByAddress(walletAddress);
+      if (existingWallet && existingWallet.id !== parseInt(userId)) {
+        return res.status(409).json({ message: 'Wallet already connected to another user' });
+      }
+      
+      // Update user with wallet address
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Create updated user with wallet address
+      const updatedUser = await storage.createUser({
+        ...user,
+        walletAddress
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to connect wallet' });
     }
   });
 
