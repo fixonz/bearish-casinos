@@ -7,10 +7,10 @@ import { Wallet } from '@/types';
  * These would be replaced with the actual deployed contract addresses
  */
 export const CONTRACT_ADDRESSES = {
-  CASINO_BASE: 'abstract1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  COIN_FLIP: 'abstract1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  CRASH_GAME: 'abstract1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  DICE_GAME: 'abstract1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  CASINO_BASE: process.env.CASINO_BASE_ADDRESS || '',
+  COIN_FLIP: process.env.COIN_FLIP_ADDRESS || '',
+  CRASH_GAME: process.env.CRASH_GAME_ADDRESS || '',
+  DICE_GAME: process.env.DICE_GAME_ADDRESS || '',
 };
 
 /**
