@@ -514,6 +514,7 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
             <TabsTrigger value="recent">Recent Players</TabsTrigger>
             <TabsTrigger value="top">Top Winners</TabsTrigger>
             <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           {/* Recent Players Tab */}
@@ -548,11 +549,9 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
           <TabsContent value="chat" className="p-4">
             {/* Add chat interface here */}
           </TabsContent>
-        </Tabs>
-      </Card>
 
-      {/* Profile Settings Tab */}
-      <TabsContent value="settings" className="m-0">
+          {/* Profile Settings Tab */}
+          <TabsContent value="settings" className="m-0">
             <div className="p-6 space-y-6">
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Avatar className="w-20 h-20 border-2 border-[#444]">
