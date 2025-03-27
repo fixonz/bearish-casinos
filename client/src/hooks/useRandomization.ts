@@ -194,7 +194,15 @@ export const useCrash = () => {
   const [cashOutMultiplier, setCashOutMultiplier] = useState<number | null>(null);
   const [history, setHistory] = useState<Array<{ multiplier: number, timestamp: Date }>>([]);
   const [chartData, setChartData] = useState<Array<{ time: number, value: number }>>([{ time: 0, value: 1 }]);
-  const [candles, setCandles] = useState<Array<{ position: number, height: number, isGreen: boolean, width: number }>>([]);
+  const [candles, setCandles] = useState<Array<{ 
+    position: number, 
+    open: number, 
+    close: number, 
+    high: number, 
+    low: number,
+    isGreen: boolean, 
+    width: number 
+  }>>([]);
   const [activeCandle, setActiveCandle] = useState<number>(0);
   
   // Generate a crash point with a consistent distribution regardless of bet amount
@@ -236,17 +244,29 @@ export const useCrash = () => {
     return crashPoint;
   };
   
-  // Generate random candles for the chart
+  // Generate random candles for the chart - crypto style
   const generateCandles = () => {
-    const candleCount = 5;
+    const candleCount = 8; // More candles for better chart
     const newCandles = [];
     
     for (let i = 0; i < candleCount; i++) {
+      // Crypto-style candle with open, close, high, low
+      const open = 50 + Math.random() * 30;
+      const close = 50 + Math.random() * 30;
+      const isGreen = close >= open;
+      
+      // High and low beyond open/close for proper candlestick
+      const high = Math.max(open, close) + (Math.random() * 10);
+      const low = Math.min(open, close) - (Math.random() * 10);
+      
       newCandles.push({
-        position: 20 + i * 50, // Space them out horizontally
-        height: 30 + Math.random() * 70, // Random heights
-        isGreen: Math.random() > 0.4, // Most candles are green 
-        width: 10 + Math.random() * 5 // Slightly varying widths
+        position: 20 + i * 40, // Space them out horizontally
+        open: open,
+        close: close,
+        high: high,
+        low: low,
+        isGreen: isGreen,
+        width: 12, // Consistent width for better appearance
       });
     }
     

@@ -262,27 +262,38 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                   opacity: index === activeCandle ? 1 : (index < activeCandle ? 0.8 : 0.4)
                 }}
               >
-                {/* Candle wick - top line */}
+                {/* Upper Wick */}
                 <div 
-                  className="absolute left-1/2 -translate-x-1/2 w-1"
+                  className="absolute mx-auto left-0 right-0 w-[2px]"
                   style={{
+                    height: `${Math.abs(candle.high - Math.max(candle.open, candle.close))}px`,
+                    bottom: `${Math.max(candle.open, candle.close) + 20}px`,
                     backgroundColor: candle.isGreen ? '#00FF00' : '#FF4081',
-                    height: '10px',
-                    bottom: `calc(${index === activeCandle ? Math.min(multiplier * 20, 190) : candle.height}px + 5px)`,
-                    opacity: 0.8,
-                    transition: index === activeCandle ? 'height 0.2s ease-in-out' : 'none'
+                    opacity: 0.8
+                  }}
+                ></div>
+                
+                {/* Lower Wick */}
+                <div 
+                  className="absolute mx-auto left-0 right-0 w-[2px]"
+                  style={{
+                    height: `${Math.abs(Math.min(candle.open, candle.close) - candle.low)}px`,
+                    bottom: `${candle.low + 20}px`,
+                    backgroundColor: candle.isGreen ? '#00FF00' : '#FF4081',
+                    opacity: 0.8
                   }}
                 ></div>
                 
                 {/* Candle body */}
                 <div 
-                  className={`transition-all ${index === activeCandle ? 'shadow-[0_0_15px_rgba(0,255,0,0.5)]' : ''}`}
+                  className={`transition-all ${index === activeCandle ? 'shadow-[0_0_10px_rgba(0,255,0,0.7)]' : ''}`}
                   style={{
                     width: `${candle.width}px`,
-                    height: index === activeCandle ? `${Math.min(multiplier * 20, 190)}px` : `${candle.height}px`,
+                    height: `${Math.abs(candle.open - candle.close)}px`,
+                    bottom: `${Math.min(candle.open, candle.close) + 20}px`,
+                    position: 'absolute',
                     backgroundColor: candle.isGreen ? '#00FF00' : '#FF4081',
-                    opacity: candle.isGreen ? 0.8 : 0.7,
-                    transition: index === activeCandle ? 'height 0.2s ease-in-out' : 'none'
+                    opacity: candle.isGreen ? 0.8 : 0.7
                   }}
                 ></div>
               </div>
