@@ -509,170 +509,50 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
 
       {/* Real-time Game Chat */}
       <Card className="mt-6 bg-[#1a1a1a] p-0 overflow-hidden shadow-xl relative">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Live Chat</h3>
-            <Button variant="ghost" size="sm">
-              <MessageSquareIcon className="w-4 h-4 mr-2" />
-              Chat
-            </Button>
-          </div>
-          <div className="h-[200px] overflow-y-auto mb-4 space-y-2">
-            {/* Real chat messages will be rendered here */}
-          </div>
-          <div className="flex gap-2">
-            <Input placeholder="Type a message..." className="flex-1" />
-            <Button>Send</Button>
-          </div>
-        </div>
+        <Tabs defaultValue="recent">
+          <TabsList className="w-full border-b border-gray-800">
+            <TabsTrigger value="recent">Recent Players</TabsTrigger>
+            <TabsTrigger value="top">Top Winners</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
+          </TabsList>
 
-          {/* Players Tab */}
-          <TabsContent value="players" className="m-0">
-            <div className="p-4">
-              <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center text-xs font-medium text-gray-400 mb-3 px-2">
-                <div>Player</div>
-                <div>Bet</div>
-                <div>Cash Out</div>
-                <div>Profit</div>
-              </div>
-
-              <ScrollArea className="h-[280px]">
-                {Array.from([...Array(10)].map((_, i) => ({
-                  id: `player${i}`,
-                  username: ['CryptoBull', 'MoonHodler', 'DiamondHands', 'BTCWhale', 'DegensUnite'][i % 5],
-                  profilePicture: [
-                    '/attached_assets/Y2HmxLIx_400x400.jpg',
-                    '/attached_assets/processed-nft-33-1-dark (1).png',
-                    '/attached_assets/bearishshs.png',
-                    '/attached_assets/head.png',
-                    '/attached_assets/image_1743101567935.png'
-                  ][i % 5],
-                  betAmount: (0.05 + i * 0.1).toFixed(2),
-                  hasCashedOut: i % 3 === 0,
-                  cashOutMultiplier: i % 3 === 0 ? (1.5 + i * 0.5).toFixed(2) : null,
-                }))).map((player, index) => (
-                  <div 
-                    key={player.id}
-                    className={cn(
-                      "flex items-center gap-3 px-2 py-3 hover:bg-[#222222] rounded-lg",
-                      index % 2 === 0 ? "bg-[#1d1d1d]" : "bg-transparent"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 min-w-[140px]">
-                      <Avatar className="w-8 h-8 border border-[#333]">
-                        <AvatarImage src={player.profilePicture} />
-                        <AvatarFallback>
-                          {player.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-sm font-medium truncate">{player.username}</div>
-                    </div>
-
-                    <div className="text-sm">
-                      <span className="font-medium">{player.betAmount}</span> 
-                      <span className="text-gray-400 text-xs"> ETH</span>
-                    </div>
-
-                    <div className="text-sm">
-                      {player.hasCashedOut ? (
-                        <span className="text-[#00FF00] font-semibold">{player.cashOutMultiplier}x</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-
-                    <div className="text-sm ml-auto">
-                      {player.hasCashedOut ? (
-                        <Badge className="bg-[#00AA00] hover:bg-[#00AA00]">
-                          +{(parseFloat(player.betAmount) * parseFloat(player.cashOutMultiplier!)).toFixed(2)} ETH
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-gray-400 border-gray-500">Waiting</Badge>
-                      )}
-                    </div>
+          {/* Recent Players Tab */}
+          <TabsContent value="recent" className="p-4">
+            {currentPlayers.map((player) => (
+              <div key={player.id} className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={player.profilePicture} />
+                    <AvatarFallback>{player.username[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium">{player.username}</p>
+                    <p className="text-xs text-gray-500">{player.betAmount} ETH</p>
                   </div>
-                ))}
-              </ScrollArea>
-            </div>
+                </div>
+                {player.hasCashedOut ? (
+                  <span className="text-green-500">{player.cashOutMultiplier}x</span>
+                ) : (
+                  <span className="text-gray-500">In Game</span>
+                )}
+              </div>
+            ))}
+          </TabsContent>
+
+          {/* Top Winners Tab */}
+          <TabsContent value="top" className="p-4">
+            {/* Add top winners list here */}
           </TabsContent>
 
           {/* Chat Tab */}
-          <TabsContent value="chat" className="m-0 p-0">
-            <div className="flex flex-col h-[332px]">
-              <ScrollArea className="flex-grow p-4">
-                {Array.from([...Array(10)].map((_, i) => ({
-                  id: `msg${i}`,
-                  userId: `player${i % 5}`,
-                  username: ['CryptoBull', 'MoonHodler', 'DiamondHands', 'BTCWhale', 'DegensUnite'][i % 5],
-                  profilePicture: [
-                    '/attached_assets/Y2HmxLIx_400x400.jpg',
-                    '/attached_assets/processed-nft-33-1-dark (1).png',
-                    '/attached_assets/bearishshs.png',
-                    '/attached_assets/head.png',
-                    '/attached_assets/image_1743101567935.png'
-                  ][i % 5],
-                  message: [
-                    "Going all in on this one! 🚀",
-                    "This is definitely mooning soon",
-                    "I'm cashing out at 2x",
-                    "Weak hands lose money 💎🙌",
-                    "Who's in for the next round?",
-                    "That was close!",
-                    "RIP to those who didn't cash out",
-                    "Just got liquidated...",
-                    "Let's go! Finally some gains",
-                    "Anyone know the ATH multiplier?"
-                  ][i % 10],
-                  timestamp: new Date(Date.now() - (i * 60000))
-                }))).map((message, index) => (
-                  <div 
-                    key={message.id}
-                    className="mb-4 last:mb-0"
-                  >
-                    <div className="flex items-start gap-2">
-                      <Avatar className="w-8 h-8 border border-[#333] mt-0.5">
-                        <AvatarImage src={message.profilePicture} />
-                        <AvatarFallback>
-                          {message.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-semibold text-sm">{message.username}</span>
-                          <span className="text-gray-400 text-xs">
-                            {message.timestamp.getHours().toString().padStart(2, '0')}:
-                            {message.timestamp.getMinutes().toString().padStart(2, '0')}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1">{message.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-
-              <div className="p-4 border-t border-[#333] mt-auto">
-                <form 
-                  className="flex items-center gap-2"
-                  onSubmit={(e: FormEvent) => {
-                    e.preventDefault();
-                    // Add chat message functionality
-                  }}
-                >
-                  <Input 
-                    className="bg-[#222] border-[#444]" 
-                    placeholder="Type a message..." 
-                  />
-                  <Button size="icon" type="submit">
-                    <SendIcon className="w-4 h-4" />
-                  </Button>
-                </form>
-              </div>
-            </div>
+          <TabsContent value="chat" className="p-4">
+            {/* Add chat interface here */}
           </TabsContent>
+        </Tabs>
+      </Card>
 
-          {/* Profile Settings Tab */}
-          <TabsContent value="settings" className="m-0">
+      {/* Profile Settings Tab */}
+      <TabsContent value="settings" className="m-0">
             <div className="p-6 space-y-6">
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Avatar className="w-20 h-20 border-2 border-[#444]">
