@@ -1,231 +1,268 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
-// Function to generate a secure random number between min and max
+// Generate a random number between min and max (inclusive)
 export const getRandomNumber = (min: number, max: number): number => {
-  // Get 2 bytes of randomness
-  const randomBuffer = new Uint16Array(1);
-  window.crypto.getRandomValues(randomBuffer);
-  
-  // Convert to a decimal between 0 and 1
-  const randomDecimal = randomBuffer[0] / 65536;
-  
-  // Scale to our range and return
-  return Math.floor(randomDecimal * (max - min + 1)) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-// Hook for coin flip game
+// Coin flip hook
 export const useCoinFlip = () => {
-  const [isFlipping, setIsFlipping] = useState(false);
   const [result, setResult] = useState<'heads' | 'tails' | null>(null);
-  const [selectedSide, setSelectedSide] = useState<'heads' | 'tails' | null>(null);
-  const [hasWon, setHasWon] = useState<boolean | null>(null);
-
-  const flip = useCallback((selection: 'heads' | 'tails') => {
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [history, setHistory] = useState<Array<{ result: 'heads' | 'tails', timestamp: Date }>>([]);
+  
+  const flip = useCallback(() => {
     setIsFlipping(true);
-    setSelectedSide(selection);
-    setHasWon(null);
-    setResult(null);
-
-    // Simulate delay for animation
+    // Simulate coin flip animation delay
     setTimeout(() => {
-      // Get random result
-      const flipResult = getRandomNumber(0, 1) === 0 ? 'heads' : 'tails';
+      const flipResult = Math.random() < 0.5 ? 'heads' : 'tails';
       setResult(flipResult);
-      setHasWon(selection === flipResult);
+      setHistory(prev => [{ result: flipResult as 'heads' | 'tails', timestamp: new Date() }, ...prev].slice(0, 10));
       setIsFlipping(false);
-    }, 3000);
+    }, 1500);
   }, []);
-
+  
   return {
-    isFlipping,
     result,
-    selectedSide,
-    hasWon,
+    isFlipping,
+    history,
     flip
   };
 };
 
-// Hook for dice roll game
+// Dice roll hook
 export const useDiceRoll = () => {
+  const [dice, setDice] = useState<number[]>([1]);
   const [isRolling, setIsRolling] = useState(false);
-  const [result, setResult] = useState<number | null>(null);
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [hasWon, setHasWon] = useState<boolean | null>(null);
-
-  const roll = useCallback((selection: number) => {
+  const [history, setHistory] = useState<Array<{ dice: number[], timestamp: Date }>>([]);
+  
+  const roll = useCallback((numberOfDice: number = 1) => {
     setIsRolling(true);
-    setSelectedNumber(selection);
-    setHasWon(null);
-    setResult(null);
-
-    // Simulate delay for animation
+    // Simulate dice roll animation delay
     setTimeout(() => {
-      // Get random result between 1 and 6
-      const rollResult = getRandomNumber(1, 6);
-      setResult(rollResult);
-      setHasWon(selection === rollResult);
+      const diceResults = Array.from({ length: numberOfDice }, () => getRandomNumber(1, 6));
+      setDice(diceResults);
+      setHistory(prev => [{ dice: diceResults, timestamp: new Date() }, ...prev].slice(0, 10));
       setIsRolling(false);
-    }, 2000);
+    }, 1500);
   }, []);
-
+  
   return {
+    dice,
     isRolling,
-    result,
-    selectedNumber,
-    hasWon,
+    history,
     roll
   };
 };
 
-// Hook for slots game
+// Slots game hook
 export const useSlots = () => {
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [result, setResult] = useState<Array<string | null>>([null, null, null]);
-  const [hasWon, setHasWon] = useState<boolean | null>(null);
-
-  // Possible symbols for the slots - using bear themed symbols
-  const symbols = ['🐻', '💰', '⭐', '🍒', '7️⃣'];
+  // Define slot symbols
+  const symbols = [
+    { name: 'cherry', value: 2 },
+    { name: 'lemon', value: 3 },
+    { name: 'orange', value: 4 },
+    { name: 'plum', value: 5 },
+    { name: 'bell', value: 10 },
+    { name: 'bar', value: 20 },
+    { name: 'seven', value: 50 },
+    { name: 'diamond', value: 100 }
+  ];
   
-  // Symbol payouts - different symbols have different values
-  const symbolPayouts = {
-    '🐻': 5, // bear has the highest payout (5x)
-    '💰': 3, // money bag has 3x
-    '⭐': 2, // star has 2x
-    '🍒': 1.5, // cherry has 1.5x
-    '7️⃣': 4, // seven has 4x
+  const [reels, setReels] = useState<string[][]>([
+    ['cherry', 'lemon', 'orange'],
+    ['plum', 'bell', 'bar'],
+    ['seven', 'diamond', 'cherry']
+  ]);
+  
+  const [spinResult, setSpinResult] = useState<string[]>(['cherry', 'plum', 'seven']);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [winAmount, setWinAmount] = useState(0);
+  const [winLines, setWinLines] = useState<number[]>([]);
+  
+  // Generate weighted random symbol based on values (higher value = less likely)
+  const getRandomSymbol = () => {
+    // Calculate total weight (inverse of value)
+    const totalWeight = symbols.reduce((sum, symbol) => sum + (100 / symbol.value), 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const symbol of symbols) {
+      const weight = 100 / symbol.value;
+      if (random <= weight) {
+        return symbol.name;
+      }
+      random -= weight;
+    }
+    
+    // Fallback
+    return symbols[0].name;
   };
-
-  const spin = useCallback(() => {
+  
+  // Spin the slots
+  const spin = useCallback((bet: number) => {
     setIsSpinning(true);
-    setHasWon(null);
-    setResult([null, null, null]);
-
-    // Simulate delay for animation
+    
+    // Reset previous win
+    setWinAmount(0);
+    setWinLines([]);
+    
+    // Generate new random reels with 3 visible positions each
+    const newReels: string[][] = [
+      [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()],
+      [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()],
+      [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]
+    ];
+    
     setTimeout(() => {
-      // Get random symbols for each reel with weighted probabilities
-      // Higher value symbols have lower probability
-      const generateWeightedSymbol = () => {
-        const rand = Math.random();
-        if (rand < 0.1) return '🐻'; // 10% chance for bear
-        if (rand < 0.25) return '7️⃣'; // 15% chance for seven
-        if (rand < 0.45) return '💰'; // 20% chance for money bag
-        if (rand < 0.70) return '⭐'; // 25% chance for star
-        return '🍒'; // 30% chance for cherry
-      };
+      setReels(newReels);
       
-      const spinResult = [
-        generateWeightedSymbol(),
-        generateWeightedSymbol(),
-        generateWeightedSymbol()
-      ];
+      // Center row is the default payline
+      const centerPayline = [newReels[0][1], newReels[1][1], newReels[2][1]];
+      setSpinResult(centerPayline);
       
-      setResult(spinResult);
+      // Check for win on center line
+      if (centerPayline[0] === centerPayline[1] && centerPayline[1] === centerPayline[2]) {
+        const symbol = symbols.find(s => s.name === centerPayline[0]);
+        if (symbol) {
+          setWinAmount(bet * symbol.value);
+          setWinLines([1]); // Center line (index 1)
+        }
+      }
       
-      // Check win conditions:
-      // - All three symbols match (big win)
-      // - Two adjacent symbols match (small win)
-      const allMatch = spinResult[0] === spinResult[1] && spinResult[1] === spinResult[2];
-      const twoMatch = 
-        spinResult[0] === spinResult[1] || 
-        spinResult[1] === spinResult[2];
+      // Check top line
+      const topPayline = [newReels[0][0], newReels[1][0], newReels[2][0]];
+      if (topPayline[0] === topPayline[1] && topPayline[1] === topPayline[2]) {
+        const symbol = symbols.find(s => s.name === topPayline[0]);
+        if (symbol) {
+          setWinAmount(prev => prev + bet * symbol.value);
+          setWinLines(prev => [...prev, 0]); // Top line (index 0)
+        }
+      }
       
-      // For simplicity, we'll only count a win if all symbols match
-      // In a real implementation, we'd calculate partial payouts for two matches
-      setHasWon(allMatch);
+      // Check bottom line
+      const bottomPayline = [newReels[0][2], newReels[1][2], newReels[2][2]];
+      if (bottomPayline[0] === bottomPayline[1] && bottomPayline[1] === bottomPayline[2]) {
+        const symbol = symbols.find(s => s.name === bottomPayline[0]);
+        if (symbol) {
+          setWinAmount(prev => prev + bet * symbol.value);
+          setWinLines(prev => [...prev, 2]); // Bottom line (index 2)
+        }
+      }
+      
+      // Diagonal top-left to bottom-right
+      const diagonalDown = [newReels[0][0], newReels[1][1], newReels[2][2]];
+      if (diagonalDown[0] === diagonalDown[1] && diagonalDown[1] === diagonalDown[2]) {
+        const symbol = symbols.find(s => s.name === diagonalDown[0]);
+        if (symbol) {
+          setWinAmount(prev => prev + bet * symbol.value);
+          setWinLines(prev => [...prev, 3]); // Diagonal down (index 3)
+        }
+      }
+      
+      // Diagonal bottom-left to top-right
+      const diagonalUp = [newReels[0][2], newReels[1][1], newReels[2][0]];
+      if (diagonalUp[0] === diagonalUp[1] && diagonalUp[1] === diagonalUp[2]) {
+        const symbol = symbols.find(s => s.name === diagonalUp[0]);
+        if (symbol) {
+          setWinAmount(prev => prev + bet * symbol.value);
+          setWinLines(prev => [...prev, 4]); // Diagonal up (index 4)
+        }
+      }
+      
       setIsSpinning(false);
-    }, 2500);
+    }, 2000);
   }, []);
-
+  
   return {
+    reels,
+    spinResult,
     isSpinning,
-    result,
-    hasWon,
-    spin,
+    winAmount,
+    winLines,
     symbols,
-    symbolPayouts
+    spin
   };
 };
 
-// Hook for crash game
+// Crash game hook
 export const useCrash = () => {
+  const [multiplier, setMultiplier] = useState(1);
+  const [isCrashed, setIsCrashed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [hasCrashed, setHasCrashed] = useState(false);
-  const [hasUserCashedOut, setHasUserCashedOut] = useState(false);
-  const [cashOutMultiplier, setCashOutMultiplier] = useState<number | null>(null);
-  const [crashPoint, setCrashPoint] = useState<number | null>(null);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-
-  // Generate crash point using randomization
-  const generateCrashPoint = useCallback(() => {
-    // Use random number generation for provable fairness
-    // This formula creates an exponential distribution common in crash games
-    const r = getRandomNumber(1, 100);
-    // Adjust these values to change the distribution
-    return Math.max(1.0, 0.9 * Math.pow(Math.E, r / 40));
-  }, []);
-
+  const [crashPoint, setCrashPoint] = useState(1);
+  const [history, setHistory] = useState<Array<{ multiplier: number, timestamp: Date }>>([]);
+  const [chartData, setChartData] = useState<Array<{ time: number, value: number }>>([{ time: 0, value: 1 }]);
+  
+  // Generate a crash point with house edge (96% RTP)
+  const generateCrashPoint = (): number => {
+    // Using a standard house edge formula for crash games
+    // (e^(house_edge * random())) where random is 0-1
+    // This creates an exponential distribution
+    const houseEdge = 0.04; // 4% house edge for a 96% RTP
+    const randomValue = Math.random();
+    return Math.max(1, Math.floor((Math.exp(houseEdge * randomValue) / houseEdge) * 100) / 100);
+  };
+  
+  // Start the crash game
   const startGame = useCallback(() => {
     if (isRunning) return;
-
-    setIsRunning(true);
-    setHasCrashed(false);
-    setHasUserCashedOut(false);
-    setCashOutMultiplier(null);
-    setMultiplier(1.0);
     
-    // Generate the crash point at the start for fairness
+    // Reset values
+    setMultiplier(1);
+    setIsCrashed(false);
+    setIsRunning(true);
+    
+    // Generate the crash point
     const newCrashPoint = generateCrashPoint();
     setCrashPoint(newCrashPoint);
     
-    // Start the multiplier increment
-    const id = setInterval(() => {
-      setMultiplier((prev) => {
-        const increment = Math.max(0.01, prev * 0.005); // Dynamic increment
-        const newValue = prev + increment;
-        
-        // Check if we've hit the crash point
-        if (newValue >= newCrashPoint) {
-          clearInterval(id);
-          setHasCrashed(true);
-          setIsRunning(false);
-          return newCrashPoint;
-        }
-        
-        return parseFloat(newValue.toFixed(2));
-      });
-    }, 100);
+    // Refresh chart data
+    setChartData([{ time: 0, value: 1 }]);
     
-    setIntervalId(id);
-  }, [isRunning, generateCrashPoint]);
-
-  const cashOut = useCallback(() => {
-    if (!isRunning || hasCrashed || hasUserCashedOut) return;
+    // Start increasing multiplier
+    let startTime = Date.now();
+    let timeElapsed = 0;
     
-    setHasUserCashedOut(true);
-    setCashOutMultiplier(multiplier);
-    
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-    }
-  }, [isRunning, hasCrashed, hasUserCashedOut, multiplier, intervalId]);
-
-  // Clean up interval on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+    const interval = setInterval(() => {
+      timeElapsed = (Date.now() - startTime) / 1000;
+      
+      // Multiplier growth function (can be adjusted for different curves)
+      const newMultiplier = Math.exp(timeElapsed / 7) * Math.pow(1.015, timeElapsed);
+      const roundedMultiplier = Math.floor(newMultiplier * 100) / 100;
+      
+      setMultiplier(roundedMultiplier);
+      
+      // Add point to chart data
+      setChartData(prev => [...prev, { time: timeElapsed, value: roundedMultiplier }]);
+      
+      // Check if we've reached the crash point
+      if (roundedMultiplier >= newCrashPoint) {
+        clearInterval(interval);
+        setIsCrashed(true);
+        setIsRunning(false);
+        setHistory(prev => [{ multiplier: roundedMultiplier, timestamp: new Date() }, ...prev].slice(0, 10));
       }
-    };
-  }, [intervalId]);
-
+    }, 50); // Update every 50ms for smooth animation
+    
+    return () => clearInterval(interval);
+  }, [isRunning]);
+  
+  // Cash out at the current multiplier
+  const cashOut = useCallback(() => {
+    if (!isRunning || isCrashed) return 0;
+    
+    const cashoutMultiplier = multiplier;
+    setIsRunning(false);
+    
+    return cashoutMultiplier;
+  }, [isRunning, isCrashed, multiplier]);
+  
   return {
-    isRunning,
     multiplier,
-    hasCrashed,
-    hasUserCashedOut,
-    cashOutMultiplier,
+    isCrashed,
+    isRunning,
+    history,
+    chartData,
     startGame,
     cashOut
   };

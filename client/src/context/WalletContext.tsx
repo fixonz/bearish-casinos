@@ -15,7 +15,8 @@ const defaultWalletContext: WalletContextType = {
   wallet: {
     address: '',
     balance: 0,
-    isConnected: false
+    isConnected: false,
+    userId: ''
   },
   connectWallet: async () => false,
   disconnectWallet: () => {},
@@ -31,7 +32,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [wallet, setWallet] = useState<Wallet>({
     address: 'abst1demo123456',
     balance: 1000,
-    isConnected: true
+    isConnected: true,
+    userId: 'user1' // Add a default userId
   });
 
   const connectWallet = useCallback(async () => {
@@ -49,7 +51,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setWallet({
         address: mockAddress,
         balance: mockBalance,
-        isConnected: true
+        isConnected: true,
+        userId: 'user' + Math.random().toString(36).substring(2, 6)
       });
       
       return true;
@@ -63,7 +66,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setWallet({
       address: '',
       balance: 0,
-      isConnected: false
+      isConnected: false,
+      userId: ''
     });
   }, []);
 

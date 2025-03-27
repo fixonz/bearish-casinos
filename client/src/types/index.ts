@@ -19,6 +19,7 @@ export interface GameResult {
   gameId: string;
   betAmount: number;
   winAmount: number;
+  multiplier: number;
   outcome: string;
   timestamp: Date;
 }
@@ -41,6 +42,7 @@ export interface Wallet {
   address: string;
   balance: number;
   isConnected: boolean;
+  userId: string; // Add userId for game results
 }
 
 export interface LeaderboardEntry {

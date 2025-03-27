@@ -2,7 +2,10 @@ import {
   users, type User, type InsertUser,
   games, type Game, type InsertGame,
   gameResults, type GameResult, type InsertGameResult,
-  type LeaderboardEntry
+  achievements, type Achievement, type InsertAchievement,
+  userAchievements, type UserAchievement, type InsertUserAchievement,
+  badges, type Badge, type InsertBadge,
+  type LeaderboardEntry, type AchievementWithProgress
 } from "@shared/schema";
 import { db } from './db';
 import { sql } from 'drizzle-orm';
@@ -103,6 +106,42 @@ export class MemStorage implements IStorage {
         isTrending: true,
         isHot: false,
         maxWin: 1000
+      },
+      {
+        gameId: 'blackjack',
+        name: 'Blackjack',
+        description: 'Beat the dealer by getting a hand value as close to 21 as possible without going over.',
+        rtp: 99.5,
+        category: 'Table Games',
+        isPopular: true,
+        isNew: true,
+        isTrending: true,
+        isHot: true,
+        maxWin: 2.5
+      },
+      {
+        gameId: 'roulette',
+        name: 'Roulette',
+        description: 'Place your bets on numbers, colors, or combinations and watch the wheel spin!',
+        rtp: 97.3,
+        category: 'Table Games',
+        isPopular: true,
+        isNew: false,
+        isTrending: true,
+        isHot: false,
+        maxWin: 36
+      },
+      {
+        gameId: 'poker',
+        name: 'Texas Hold\'em Poker',
+        description: 'Test your poker skills against the dealer with this classic card game.',
+        rtp: 98.7,
+        category: 'Card Games',
+        isPopular: true,
+        isNew: false,
+        isTrending: false,
+        isHot: true,
+        maxWin: 500
       }
     ];
     
@@ -252,7 +291,9 @@ export class MemStorage implements IStorage {
         wins: user.wins,
         bestMultiplier: user.bestMultiplier,
         totalWagered: user.totalWagered,
-        joinedAt: user.joinedAt
+        joinedAt: user.joinedAt,
+        level: user.level,
+        points: user.points
       }));
   }
   
@@ -417,7 +458,9 @@ export class PgStorage implements IStorage {
       wins: user.wins,
       bestMultiplier: user.bestMultiplier,
       totalWagered: user.totalWagered,
-      joinedAt: user.joinedAt
+      joinedAt: user.joinedAt,
+      level: user.level,
+      points: user.points
     }));
   }
 
@@ -489,6 +532,42 @@ export class PgStorage implements IStorage {
           isTrending: true,
           isHot: false,
           maxWin: 1000
+        },
+        {
+          gameId: 'blackjack',
+          name: 'Blackjack',
+          description: 'Beat the dealer by getting a hand value as close to 21 as possible without going over.',
+          rtp: 99.5,
+          category: 'Table Games',
+          isPopular: true,
+          isNew: true,
+          isTrending: true,
+          isHot: true,
+          maxWin: 2.5
+        },
+        {
+          gameId: 'roulette',
+          name: 'Roulette',
+          description: 'Place your bets on numbers, colors, or combinations and watch the wheel spin!',
+          rtp: 97.3,
+          category: 'Table Games',
+          isPopular: true,
+          isNew: false,
+          isTrending: true,
+          isHot: false,
+          maxWin: 36
+        },
+        {
+          gameId: 'poker',
+          name: 'Texas Hold\'em Poker',
+          description: 'Test your poker skills against the dealer with this classic card game.',
+          rtp: 98.7,
+          category: 'Card Games',
+          isPopular: true,
+          isNew: false,
+          isTrending: false,
+          isHot: true,
+          maxWin: 500
         }
       ];
       
