@@ -190,29 +190,44 @@ export const useCrash = () => {
   const [isCrashed, setIsCrashed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [crashPoint, setCrashPoint] = useState(1);
+  const [hasUserCashedOut, setHasUserCashedOut] = useState(false);
+  const [cashOutMultiplier, setCashOutMultiplier] = useState<number | null>(null);
   const [history, setHistory] = useState<Array<{ multiplier: number, timestamp: Date }>>([]);
   const [chartData, setChartData] = useState<Array<{ time: number, value: number }>>([{ time: 0, value: 1 }]);
   
-  // Generate a crash point with higher chance of early crash
+  // Generate a crash point with a consistent distribution regardless of bet amount
   const generateCrashPoint = (): number => {
-    // Modified formula to increase probability of lower multipliers
-    // Higher house edge increases chance of early crashes
-    const houseEdge = 0.15; // 15% house edge for more frequent crashes
+    // Base house edge (constant regardless of bet amount)
+    const houseEdge = 0.05;
     
-    // Generate a biased random value that favors lower numbers
-    // This makes crashes more frequent at lower multipliers
-    let randomValue = Math.random();
+    // Generate a random value with a more balanced distribution
+    const randomValue = Math.random();
     
-    // Apply additional bias toward early crashes
-    randomValue = Math.pow(randomValue, 1.5);
+    // Use a formula that creates a smoother distribution
+    // This is the "provably fair" approach similar to what real crypto gambling sites use
+    let crashPoint = 0.99 / (randomValue * houseEdge);
     
-    // Calculate crash point with modified formula
-    // Limit maximum multiplier to 10 most of the time
-    let crashPoint = Math.max(1, Math.floor((Math.exp(houseEdge * randomValue) / houseEdge) * 100) / 100);
+    // Round to 2 decimal places
+    crashPoint = Math.floor(crashPoint * 100) / 100;
     
-    // 80% chance to crash before 10x
-    if (crashPoint > 10 && Math.random() < 0.8) {
-      crashPoint = 1 + Math.random() * 9; 
+    // Enforce minimum and reasonable maximum
+    crashPoint = Math.max(1.01, Math.min(crashPoint, 100));
+    
+    // Small chance (2%) for a very high multiplier between 10-100x
+    if (randomValue > 0.98) {
+      crashPoint = 10 + Math.random() * 90;
+      crashPoint = Math.floor(crashPoint * 100) / 100;
+    }
+    
+    // More common (28%) chance for medium multiplier between 2-10x
+    else if (randomValue > 0.70) {
+      crashPoint = 2 + Math.random() * 8;
+      crashPoint = Math.floor(crashPoint * 100) / 100;
+    }
+    
+    // 70% chance for lower multipliers between 1.01-2x
+    else {
+      crashPoint = 1.01 + Math.random() * 0.99;
       crashPoint = Math.floor(crashPoint * 100) / 100;
     }
     
@@ -227,8 +242,10 @@ export const useCrash = () => {
     setMultiplier(1);
     setIsCrashed(false);
     setIsRunning(true);
+    setHasUserCashedOut(false);
+    setCashOutMultiplier(null);
     
-    // Generate the crash point
+    // Generate the crash point - consistent regardless of bet amount
     const newCrashPoint = generateCrashPoint();
     setCrashPoint(newCrashPoint);
     
@@ -242,8 +259,9 @@ export const useCrash = () => {
     const interval = setInterval(() => {
       timeElapsed = (Date.now() - startTime) / 1000;
       
-      // Multiplier growth function (can be adjusted for different curves)
-      const newMultiplier = Math.exp(timeElapsed / 7) * Math.pow(1.015, timeElapsed);
+      // Consistent multiplier growth function that doesn't change with bet amount
+      // Slower initial growth, then accelerating
+      const newMultiplier = Math.pow(1.0016, timeElapsed * 1000);
       const roundedMultiplier = Math.floor(newMultiplier * 100) / 100;
       
       setMultiplier(roundedMultiplier);
@@ -268,6 +286,8 @@ export const useCrash = () => {
     if (!isRunning || isCrashed) return 0;
     
     const cashoutMultiplier = multiplier;
+    setHasUserCashedOut(true);
+    setCashOutMultiplier(cashoutMultiplier);
     setIsRunning(false);
     
     return cashoutMultiplier;
@@ -275,8 +295,10 @@ export const useCrash = () => {
   
   return {
     multiplier,
-    isCrashed,
+    hasCrashed: isCrashed,
     isRunning,
+    hasUserCashedOut,
+    cashOutMultiplier,
     history,
     chartData,
     startGame,

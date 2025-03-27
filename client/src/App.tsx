@@ -18,6 +18,10 @@ import NotFound from "@/pages/not-found";
 import { WalletProvider } from "@/context/WalletContext";
 import { GamesProvider } from "@/context/GamesContext";
 
+// Import Rainbow Wallet components
+import { WalletProvider as RainbowWalletProvider } from '@/providers/WalletProvider';
+import '@rainbow-me/rainbowkit/styles.css';
+
 function Router() {
   return (
     <Switch>
@@ -41,12 +45,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <GamesProvider>
-        <WalletProvider>
-          <Router />
-          <Toaster />
-        </WalletProvider>
-      </GamesProvider>
+      <RainbowWalletProvider>
+        <GamesProvider>
+          <WalletProvider>
+            <Router />
+            <Toaster />
+          </WalletProvider>
+        </GamesProvider>
+      </RainbowWalletProvider>
     </QueryClientProvider>
   );
 }

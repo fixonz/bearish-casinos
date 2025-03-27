@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MenuIcon, CloseIcon } from '@/lib/icons';
 import { useWalletContext } from '@/context/WalletContext';
 import WalletModal from './modals/WalletModal';
+import ConnectButton from '@/components/ui/ConnectButton';
 import bearishLogo from '@assets/bearishshs.png';
 
 const Header: React.FC = () => {
@@ -45,12 +46,8 @@ const Header: React.FC = () => {
             <Link href="/#rewards" className="font-medium hover:text-[#FFD700] transition-colors">
               Rewards
             </Link>
-            <Button 
-              className="px-4 py-2 bg-gradient-to-r from-[#FFD700] to-[#FF4081] rounded-full font-medium hover:shadow-lg transition-all text-black"
-              onClick={handleWalletConnect}
-            >
-              {wallet.isConnected ? 'Wallet Connected' : 'Connect Wallet'}
-            </Button>
+            {/* RainbowKit Connect Button */}
+            <ConnectButton className="ml-2" />
           </nav>
           
           {/* Mobile menu button */}
@@ -97,15 +94,10 @@ const Header: React.FC = () => {
             >
               Rewards
             </Link>
-            <Button 
-              className="px-4 py-2 bg-gradient-to-r from-[#FFD700] to-[#FF4081] rounded-full font-medium hover:shadow-lg transition-all text-black"
-              onClick={() => {
-                handleWalletConnect();
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              {wallet.isConnected ? 'Wallet Connected' : 'Connect Wallet'}
-            </Button>
+            {/* RainbowKit Connect Button */}
+            <div onClick={() => setIsMobileMenuOpen(false)}>
+              <ConnectButton />
+            </div>
           </nav>
         </div>
       </div>
