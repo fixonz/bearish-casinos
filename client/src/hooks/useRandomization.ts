@@ -252,8 +252,17 @@ export const useCrash = () => {
     for (let i = 0; i < candleCount; i++) {
       // Crypto-style candle with open, close, high, low
       const open = 50 + Math.random() * 30;
-      const close = 50 + Math.random() * 30;
-      const isGreen = close >= open;
+      
+      // Make first candle always green
+      let close, isGreen;
+      if (i === 0) {
+        // First candle is always green (close > open)
+        close = open + 5 + Math.random() * 15;
+        isGreen = true;
+      } else {
+        close = 50 + Math.random() * 30;
+        isGreen = close >= open;
+      }
       
       // High and low beyond open/close for proper candlestick
       const high = Math.max(open, close) + (Math.random() * 10);
@@ -273,6 +282,33 @@ export const useCrash = () => {
     setCandles(newCandles);
   };
   
+  // Play sound effect
+  const playSound = (type: 'start' | 'cashout' | 'crash') => {
+    try {
+      let sound: HTMLAudioElement;
+      
+      switch (type) {
+        case 'start':
+          // Rocket launch sound
+          sound = new Audio('data:audio/wav;base64,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');
+          break;
+        case 'cashout':
+          // Cash register sound
+          sound = new Audio('data:audio/wav;base64,UklGRigCAABXQVZFZm10IBAAAAABAAEARKwAABCxAAACAAgAZGF0YQQCAACBgIF/gn2Cf4B+gH9+fX9/fn1/gH19f4F8fICCe3yAg3p8f4R6e3+Een1+gnx8foJ9fH6CfXx+gn18foJ9fH6CfXx+gn18foJ9fH6CfXt/gXx8gIF8fICBfHyAgXx9f4J8fX+CfH1/gnx9f4J7fn+BfH6AgHx+gIB8foB/fH6Af3x+gH98foB/e3+Bfnx/gX18f4F9fH+BfXx/gX1/fnl9hDQFTrAsmf6H/z33VNxODzMGbwanB1YHwAcwCIMI5QcuB68GCwZ1BSEFgARXBJ8DTAPmAhsCaAGuAPn/Pf+O/tb9M/2A/Pn7Ffya+kb6JPor+lL6//p7+/f7qPxm/SL+0v6J/zkA9wCmAVUCAgOrA0kE3ARfBesFlwaEBu0GXQfdB1AIxAj+CGoJ0QkhCnIK1wpGC5QLRAzuDJwNSQ75DqgPXBATEcYRgBIoE9kTkhRHFfUVoxZUF/4XoBhHGegZaxr8GocbFRyfHC0dtB09HsMeRR/HH0YgwCAcIXUhzSEiIm8iviIFI1AjmiPgIyQkZiSrJOskLiVmJaMl3yURJkkmeyaqJtUm/iYhJ0QnYSd6J5QnrCe+J88n4SfxJwAoDCgXKB4oJygtKDEoDwdNCmABgfcy2EHEPbqerZCpnaqYrJOthK52sXCyYLVRtze7G70FwOPC0MW1yJnL8c9a4ITkSew6/xgAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQAAAA==');
+          break;
+        case 'crash':
+          // Crash sound
+          sound = new Audio('data:audio/wav;base64,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');
+          break;
+      }
+      
+      sound.volume = 0.5;
+      sound.play().catch(e => console.error('Error playing sound:', e));
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
+  };
+  
   // Start the crash game
   const startGame = useCallback(() => {
     if (isRunning) return;
@@ -284,6 +320,9 @@ export const useCrash = () => {
     setHasUserCashedOut(false);
     setCashOutMultiplier(null);
     setActiveCandle(0);
+    
+    // Play start sound
+    playSound('start');
     
     // Generate candles for this round
     generateCandles();
@@ -324,6 +363,10 @@ export const useCrash = () => {
         clearInterval(interval);
         setIsCrashed(true);
         setIsRunning(false);
+        
+        // Play crash sound
+        playSound('crash');
+        
         setHistory(prev => [{ multiplier: roundedMultiplier, timestamp: new Date() }, ...prev].slice(0, 10));
       }
     }, 100); // Update every 100ms for smoother animation and less CPU usage
@@ -334,6 +377,9 @@ export const useCrash = () => {
   // Cash out at the current multiplier
   const cashOut = useCallback(() => {
     if (!isRunning || isCrashed) return 0;
+    
+    // Play cashout sound
+    playSound('cashout');
     
     const cashoutMultiplier = multiplier;
     setHasUserCashedOut(true);

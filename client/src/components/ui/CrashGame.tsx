@@ -216,13 +216,14 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                       opacity: 0.4
                     }}
                   >
-                    {/* Candle wick - top line */}
+                    {/* Upper Wick */}
                     <div 
-                      className="absolute left-1/2 -translate-x-1/2 w-0.5"
+                      className="absolute mx-auto left-0 right-0 w-[1px]"
                       style={{
-                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
                         height: `${5 + Math.random() * 15}px`,
-                        bottom: `${height}px`
+                        bottom: `${height + 5}px`,
+                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
+                        opacity: 0.8
                       }}
                     ></div>
                     
@@ -231,18 +232,20 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
                       style={{
                         width: `${width}px`,
                         height: `${height}px`,
+                        position: 'absolute',
                         backgroundColor: isGreen ? '#00FF00' : '#FF4081',
                         opacity: isGreen ? 0.6 : 0.5
                       }}
                     ></div>
                     
-                    {/* Candle wick - bottom line */}
+                    {/* Lower Wick */}
                     <div 
-                      className="absolute left-1/2 -translate-x-1/2 w-0.5"
+                      className="absolute mx-auto left-0 right-0 w-[1px]"
                       style={{
-                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
                         height: `${5 + Math.random() * 10}px`,
-                        top: `${height}px`
+                        bottom: `0px`,
+                        backgroundColor: isGreen ? '#00FF00' : '#FF4081',
+                        opacity: 0.8
                       }}
                     ></div>
                   </div>
