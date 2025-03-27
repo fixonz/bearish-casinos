@@ -15,40 +15,43 @@ contract CrashGame is AbstractCasinoBase {
     event PlayerJoined(bytes32 indexed gameId, address indexed player, uint256 betAmount);
     event PlayerCashedOut(bytes32 indexed gameId, address indexed player, uint256 multiplier, uint256 winAmount);
     event GameCrashed(bytes32 indexed gameId, uint256 crashPoint);
-    
+
     // ============ State Variables ============
     // Game state
     enum GameState { WAITING, RUNNING, CRASHED }
-    
+
     struct Game {
         bytes32 id;
         GameState state;
         uint256 startTimestamp;
+        uint256 nextGameStart;
         bytes32 seed;
-        uint256 crashPoint; // Represented as an integer (e.g., 250 = 2.5x)
+        uint256 crashPoint;
         mapping(address => PlayerBet) playerBets;
         address[] players;
     }
-    
+
     struct PlayerBet {
         uint256 betAmount;
         bool hasCashedOut;
         uint256 cashoutMultiplier;
     }
-    
+
     // Current game
     Game private currentGame;
-    
+
     // Previous games for verification
     bytes32[] public gameHistory;
     mapping(bytes32 => uint256) public gameCrashPoints;
-    
+
     // House edge on this game (lower than simple games since there's more risk to player)
     uint256 private constant MAX_CRASH_POINT = 1000000; // Maximum 10,000x
-    
+
     // Timestamp tracking for simulation
     uint256 private lastTimestamp;
-    
+
+    uint256 public constant GAME_INTERVAL = 45 seconds;
+
     /**
      * @dev Constructor
      * @param _houseEdge The house edge in basis points (e.g., 250 = 2.5%)
@@ -61,7 +64,7 @@ contract CrashGame is AbstractCasinoBase {
         bytes32 seed = keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1), msg.sender));
         _createNewGame(seed);
     }
-    
+
     /**
      * @dev Join the current game before it starts
      * @param betAmount The amount to bet
@@ -69,23 +72,23 @@ contract CrashGame is AbstractCasinoBase {
     function joinGame(uint256 betAmount) external whenNotPaused onlyRegistered {
         require(currentGame.state == GameState.WAITING, "CrashGame: game already in progress");
         require(currentGame.playerBets[msg.sender].betAmount == 0, "CrashGame: already joined this game");
-        
+
         // Validate and place the bet
         _placeBet(betAmount);
-        
+
         // Record the player's bet
         currentGame.playerBets[msg.sender] = PlayerBet({
             betAmount: betAmount,
             hasCashedOut: false,
             cashoutMultiplier: 0
         });
-        
+
         // Add to the players list
         currentGame.players.push(msg.sender);
-        
+
         emit PlayerJoined(currentGame.id, msg.sender, betAmount);
     }
-    
+
     /**
      * @dev Start the current game if enough players have joined
      * This would typically be triggered by an off-chain mechanism in a real implementation
@@ -93,19 +96,20 @@ contract CrashGame is AbstractCasinoBase {
     function startGame() external whenNotPaused {
         require(currentGame.state == GameState.WAITING, "CrashGame: game not in waiting state");
         require(currentGame.players.length > 0, "CrashGame: no players have joined");
-        
+
         // Start the game
         currentGame.state = GameState.RUNNING;
         currentGame.startTimestamp = block.timestamp;
         lastTimestamp = block.timestamp;
-        
+        currentGame.nextGameStart = block.timestamp + GAME_INTERVAL;
+
         // Determine the crash point (would use VRF in production)
         uint256 crashPoint = _calculateGameCrashPoint(currentGame.seed);
         currentGame.crashPoint = crashPoint;
-        
+
         emit GameStarted(currentGame.id, block.timestamp, currentGame.seed);
     }
-    
+
     /**
      * @dev Player attempts to cash out before the crash
      * In a production environment, this would be handled differently
@@ -115,61 +119,61 @@ contract CrashGame is AbstractCasinoBase {
         require(currentGame.state == GameState.RUNNING, "CrashGame: game not running");
         require(currentGame.playerBets[msg.sender].betAmount > 0, "CrashGame: player has not joined this game");
         require(!currentGame.playerBets[msg.sender].hasCashedOut, "CrashGame: player already cashed out");
-        
+
         // Calculate current multiplier based on elapsed time
         // This is a simplified simulation - real implementation would be different
         uint256 elapsedMilliseconds = (block.timestamp - currentGame.startTimestamp) * 1000;
         uint256 currentMultiplier = _getCurrentMultiplier(elapsedMilliseconds);
-        
+
         // Ensure the game hasn't crashed yet
         require(currentMultiplier < currentGame.crashPoint, "CrashGame: game has already crashed");
-        
+
         // Mark player as cashed out at the current multiplier
         currentGame.playerBets[msg.sender].hasCashedOut = true;
         currentGame.playerBets[msg.sender].cashoutMultiplier = currentMultiplier;
-        
+
         // Calculate winnings
         uint256 betAmount = currentGame.playerBets[msg.sender].betAmount;
         uint256 winAmount = (betAmount * currentMultiplier) / 100; // Multiplier is in hundredths
-        
+
         // Update player stats
         _updatePlayerStats(msg.sender, "CRASH", betAmount, winAmount);
-        
+
         emit PlayerCashedOut(currentGame.id, msg.sender, currentMultiplier, winAmount);
     }
-    
+
     /**
      * @dev Force the game to crash (for testing and simulation)
      * In a production environment, this would be automated based on the crash point
      */
     function forceCrash() external whenNotPaused {
         require(currentGame.state == GameState.RUNNING, "CrashGame: game not running");
-        
+
         // Simulate the game crashing
         uint256 multiplier = currentGame.crashPoint;
-        
+
         // Process any players who didn't cash out
         for (uint256 i = 0; i < currentGame.players.length; i++) {
             address player = currentGame.players[i];
             PlayerBet storage bet = currentGame.playerBets[player];
-            
+
             if (!bet.hasCashedOut) {
                 // Player lost their bet (already deducted from balance)
                 _updatePlayerStats(player, "CRASH", bet.betAmount, 0);
             }
         }
-        
+
         // Record this game in history
         gameHistory.push(currentGame.id);
         gameCrashPoints[currentGame.id] = multiplier;
-        
+
         emit GameCrashed(currentGame.id, multiplier);
-        
+
         // Create a new game
         bytes32 newSeed = keccak256(abi.encodePacked(currentGame.seed, block.timestamp, block.prevrandao));
         _createNewGame(newSeed);
     }
-    
+
     /**
      * @dev Calculate the current multiplier based on elapsed time
      * This is a simplified exponential growth function
@@ -181,14 +185,14 @@ contract CrashGame is AbstractCasinoBase {
         if (elapsedMilliseconds < 1000) {
             return 100 + elapsedMilliseconds / 10; // Linear growth in the first second
         }
-        
+
         // After 1 second, use an exponential curve that slows down over time
         uint256 baseMultiplier = 100 + (elapsedMilliseconds / 10);
         uint256 additionalGrowth = (elapsedMilliseconds * elapsedMilliseconds) / 100000;
-        
+
         return baseMultiplier + additionalGrowth;
     }
-    
+
     /**
      * @dev Calculate the crash point for a game using the seed
      * The algorithm ensures the house maintains its edge over time
@@ -197,11 +201,11 @@ contract CrashGame is AbstractCasinoBase {
      */
     function _calculateGameCrashPoint(bytes32 seed) private view returns (uint256) {
         uint256 randomValue = uint256(keccak256(abi.encodePacked(seed)));
-        
+
         // Apply house edge
         // The formula ensures that the expected value < 1.0 by house edge
         uint256 houseEdgeFactor = 10000 - houseEdge;
-        
+
         // This formula creates an exponential distribution of crash points
         // Most will be low, but some can be very high
         uint256 crashPoint;
@@ -215,21 +219,21 @@ contract CrashGame is AbstractCasinoBase {
             // Most common: 1.00x to 3.00x
             crashPoint = 100 + (randomValue % 200);
         }
-        
+
         // Apply house edge
         crashPoint = (crashPoint * houseEdgeFactor) / 10000;
-        
+
         // Ensure minimum crash point is 1.00x
         return crashPoint < 100 ? 100 : crashPoint;
     }
-    
+
     /**
      * @dev Create a new game with a given seed
      * @param seed The random seed for the game
      */
     function _createNewGame(bytes32 seed) private {
         bytes32 gameId = keccak256(abi.encodePacked(seed, block.number, block.timestamp));
-        
+
         // Reset the game struct
         delete currentGame.players;
         currentGame.id = gameId;
@@ -237,8 +241,10 @@ contract CrashGame is AbstractCasinoBase {
         currentGame.seed = seed;
         currentGame.startTimestamp = 0;
         currentGame.crashPoint = 0;
+        currentGame.nextGameStart = block.timestamp + GAME_INTERVAL; // added line to set next game start time
+
     }
-    
+
     /**
      * @dev Get information about the current game
      * @return id Game ID
@@ -250,16 +256,18 @@ contract CrashGame is AbstractCasinoBase {
         bytes32 id,
         uint8 state,
         uint256 startTimestamp,
-        uint256 playerCount
+        uint256 playerCount,
+        uint256 nextGameStart
     ) {
         return (
             currentGame.id,
             uint8(currentGame.state),
             currentGame.startTimestamp,
-            currentGame.players.length
+            currentGame.players.length,
+            currentGame.nextGameStart
         );
     }
-    
+
     /**
      * @dev Get information about a player's bet in the current game
      * @param player Address of the player
@@ -279,7 +287,7 @@ contract CrashGame is AbstractCasinoBase {
             bet.cashoutMultiplier
         );
     }
-    
+
     /**
      * @dev Get the last N game crash points for verification
      * @param count Number of games to return (max 50)
@@ -292,20 +300,20 @@ contract CrashGame is AbstractCasinoBase {
     ) {
         // Limit to 50 games max
         if (count > 50) count = 50;
-        
+
         // Limit to available history
         if (count > gameHistory.length) count = gameHistory.length;
-        
+
         gameIds = new bytes32[](count);
         crashPoints = new uint256[](count);
-        
+
         // Start from the most recent game
         for (uint256 i = 0; i < count; i++) {
             uint256 index = gameHistory.length - 1 - i;
             gameIds[i] = gameHistory[index];
             crashPoints[i] = gameCrashPoints[gameHistory[index]];
         }
-        
+
         return (gameIds, crashPoints);
     }
 }
