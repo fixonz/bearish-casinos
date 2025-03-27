@@ -211,13 +211,68 @@ export const useCrash = () => {
     id: string,
     betAmount: number,
     username: string,
+    profilePicture: string,  // URL to profile picture
     hasJoined: boolean,
     hasCashedOut: boolean,
     cashOutMultiplier: number | null,
     isConnected: boolean
-  }>>([]);
+  }>>([
+    // Default dummy players to ensure game is never empty
+    {
+      id: 'player1',
+      betAmount: 0.05,
+      username: 'CryptoBull',
+      profilePicture: '/attached_assets/Y2HmxLIx_400x400.jpg',
+      hasJoined: true,
+      hasCashedOut: false,
+      cashOutMultiplier: null,
+      isConnected: true
+    },
+    {
+      id: 'player2',
+      betAmount: 0.1,
+      username: 'MoonHodler',
+      profilePicture: '/attached_assets/processed-nft-33-1-dark (1).png',
+      hasJoined: true,
+      hasCashedOut: false,
+      cashOutMultiplier: null,
+      isConnected: true
+    },
+    {
+      id: 'player3',
+      betAmount: 0.02,
+      username: 'DiamondHands',
+      profilePicture: '/attached_assets/bearishshs.png',
+      hasJoined: true,
+      hasCashedOut: false,
+      cashOutMultiplier: null,
+      isConnected: true
+    }
+  ]);
   const [gameStartCountdown, setGameStartCountdown] = useState<number | null>(null);
   const [nextGameTimestamp, setNextGameTimestamp] = useState<Date | null>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{
+    userId: string,
+    username: string,
+    profilePicture: string,
+    message: string,
+    timestamp: Date
+  }>>([
+    {
+      userId: 'player1',
+      username: 'CryptoBull',
+      profilePicture: '/attached_assets/Y2HmxLIx_400x400.jpg',
+      message: 'Let\'s go to the moon! 🚀',
+      timestamp: new Date(Date.now() - 60000)
+    },
+    {
+      userId: 'player2',
+      username: 'MoonHodler',
+      profilePicture: '/attached_assets/processed-nft-33-1-dark (1).png',
+      message: 'I\'m cashing out at 3x',
+      timestamp: new Date(Date.now() - 30000)
+    }
+  ]);
   
   // Generate a crash point with a consistent distribution regardless of bet amount
   const generateCrashPoint = (): number => {
@@ -258,40 +313,76 @@ export const useCrash = () => {
     return crashPoint;
   };
   
-  // Generate random candles for the chart - crypto style
+  // Generate candles for the chart in the exact pattern requested
   const generateCandles = () => {
-    const candleCount = 8; // More candles for better chart
+    const candleCount = 6; // Number of candles to show
     const newCandles = [];
     
-    for (let i = 0; i < candleCount; i++) {
-      // Crypto-style candle with open, close, high, low
-      const open = 50 + Math.random() * 30;
-      
-      // Make first candle always green
-      let close, isGreen;
-      if (i === 0) {
-        // First candle is always green (close > open)
-        close = open + 5 + Math.random() * 15;
-        isGreen = true;
-      } else {
-        close = 50 + Math.random() * 30;
-        isGreen = close >= open;
-      }
-      
-      // High and low beyond open/close for proper candlestick
-      const high = Math.max(open, close) + (Math.random() * 10);
-      const low = Math.min(open, close) - (Math.random() * 10);
-      
-      newCandles.push({
-        position: 20 + i * 40, // Space them out horizontally
-        open: open,
-        close: close,
-        high: high,
-        low: low,
-        isGreen: isGreen,
-        width: 12, // Consistent width for better appearance
-      });
-    }
+    // Create first candle (starting from 0 to 1x)
+    newCandles.push({
+      position: 20, // First position
+      open: 20, // Bottom of candle
+      close: 50, // Top of candle
+      high: 55, // Wick high
+      low: 15, // Wick low
+      isGreen: true, // First candle always green
+      width: 12 // Standard width
+    });
+    
+    // Second candle (1x to 2x)
+    newCandles.push({
+      position: 60, // Second position
+      open: 50, // Connect to previous
+      close: 70, // Higher close
+      high: 75,
+      low: 45,
+      isGreen: true, // Up trend continues
+      width: 12
+    });
+    
+    // Third candle (2x to 3x)
+    newCandles.push({
+      position: 100,
+      open: 70,
+      close: 85, // Higher again
+      high: 90,
+      low: 65,
+      isGreen: true,
+      width: 12
+    });
+    
+    // Fourth candle (small red correction)
+    newCandles.push({
+      position: 140,
+      open: 85,
+      close: 80, // Small drop
+      high: 87,
+      low: 75,
+      isGreen: false, // Red candle
+      width: 12
+    });
+    
+    // Fifth candle (recovery, back to green)
+    newCandles.push({
+      position: 180,
+      open: 80,
+      close: 90, // Back up
+      high: 95,
+      low: 75,
+      isGreen: true,
+      width: 12
+    });
+    
+    // Sixth candle (strong bullish to highest point)
+    newCandles.push({
+      position: 220,
+      open: 90,
+      close: 110, // Highest point
+      high: 115,
+      low: 85,
+      isGreen: true,
+      width: 12
+    });
     
     setCandles(newCandles);
   };
@@ -365,7 +456,7 @@ export const useCrash = () => {
   }, [isMultiplayerGame, isRunning, isCrashed, playSound]);
   
   // Add a player to the current game (for multiplayer)
-  const joinGame = useCallback((playerId: string, username: string, betAmount: number) => {
+  const joinGame = useCallback((playerId: string, username: string, betAmount: number, profilePicture: string = '/attached_assets/head.png') => {
     if (isCrashed) return false;
     
     // Check if player already exists
@@ -390,6 +481,7 @@ export const useCrash = () => {
         {
           id: playerId,
           username,
+          profilePicture,
           betAmount,
           hasJoined: true,
           hasCashedOut: false,
@@ -401,6 +493,47 @@ export const useCrash = () => {
     
     return true;
   }, [isCrashed, currentPlayers]);
+  
+  // Add chat message
+  const addChatMessage = useCallback((playerId: string, message: string) => {
+    const player = currentPlayers.find(p => p.id === playerId);
+    if (!player) return false;
+    
+    setChatMessages(prev => [
+      ...prev,
+      {
+        userId: playerId,
+        username: player.username,
+        profilePicture: player.profilePicture,
+        message,
+        timestamp: new Date()
+      }
+    ]);
+    
+    return true;
+  }, [currentPlayers]);
+  
+  // Change player nickname
+  const changePlayerNickname = useCallback((playerId: string, newNickname: string) => {
+    setCurrentPlayers(prev => 
+      prev.map(player => 
+        player.id === playerId 
+          ? { ...player, username: newNickname } 
+          : player
+      )
+    );
+  }, []);
+  
+  // Change player profile picture
+  const changePlayerProfilePicture = useCallback((playerId: string, newProfilePicture: string) => {
+    setCurrentPlayers(prev => 
+      prev.map(player => 
+        player.id === playerId 
+          ? { ...player, profilePicture: newProfilePicture } 
+          : player
+      )
+    );
+  }, []);
   
   // Player cash out (for multiplayer)
   const playerCashOut = useCallback((playerId: string) => {
@@ -450,8 +583,8 @@ export const useCrash = () => {
     const newCrashPoint = generateCrashPoint();
     setCrashPoint(newCrashPoint);
     
-    // Refresh chart data
-    setChartData([{ time: 0, value: 1 }]);
+    // Refresh chart data - start from 0x
+    setChartData([{ time: 0, value: 0 }]);
     
     // Reset player status for those who are still in the game
     setCurrentPlayers(prev => prev.map(player => ({
@@ -468,9 +601,22 @@ export const useCrash = () => {
     const interval = setInterval(() => {
       timeElapsed = (Date.now() - startTime) / 1000;
       
-      // MUCH slower growth curve for better gameplay
-      // This gives players time to enjoy the game and make decisions
-      const newMultiplier = 1 + (timeElapsed / 7); // Linear growth is easier to understand and predict
+      // Growth curve that starts at 0 and gradually increases
+      // First 5 seconds: 0x to 1x
+      // Next 5 seconds: 1x to 2x
+      // Next 5 seconds: 2x to 3x, etc.
+      let newMultiplier;
+      
+      if (timeElapsed <= 5) {
+        // First 5 seconds go from 0x to 1x
+        newMultiplier = timeElapsed / 5;
+      } else {
+        // After 5 seconds, increase by 1x every 5 seconds
+        const segment = Math.floor(timeElapsed / 5);
+        const segmentProgress = (timeElapsed % 5) / 5;
+        newMultiplier = segment + segmentProgress;
+      }
+      
       const roundedMultiplier = Math.floor(newMultiplier * 100) / 100;
       
       setMultiplier(roundedMultiplier);
@@ -553,6 +699,7 @@ export const useCrash = () => {
     currentPlayers,
     gameStartCountdown,
     nextGameTimestamp,
+    chatMessages,
     
     // Game actions
     startGame,
@@ -562,6 +709,11 @@ export const useCrash = () => {
     setIsMultiplayerGame,
     joinGame,
     playerCashOut,
-    leaveGame
+    leaveGame,
+    
+    // Chat and profile actions
+    addChatMessage,
+    changePlayerNickname,
+    changePlayerProfilePicture
   };
 };

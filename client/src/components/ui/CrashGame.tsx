@@ -1,12 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { useWalletContext } from '@/context/WalletContext';
 import { useCrash } from '@/hooks/useRandomization';
 import { useToast } from '@/hooks/use-toast';
 import WinModal from '@/components/modals/WinModal';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, cn } from '@/lib/utils';
 import bearishshsImg from '@assets/bearishshs.png';
+import { MessageSquareIcon, Users2Icon, Settings2Icon, SendIcon } from 'lucide-react';
+import defaultAvatarImg from '@assets/head.png';
 
 interface CrashGameProps {
   maxBet?: number;
@@ -24,8 +32,18 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
     cashOutMultiplier,
     candles,
     activeCandle,
+    currentPlayers,
+    chatMessages,
+    gameStartCountdown,
+    nextGameTimestamp,
     startGame, 
-    cashOut 
+    cashOut,
+    joinGame,
+    playerCashOut,
+    leaveGame,
+    addChatMessage,
+    changePlayerNickname,
+    changePlayerProfilePicture
   } = useCrash();
   
   const [betAmount, setBetAmount] = useState(1.0);
@@ -488,6 +506,237 @@ const CrashGame: React.FC<CrashGameProps> = ({ maxBet = 1000, minBet = 0.1 }) =>
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#FFD700] bg-opacity-10 rounded-full"></div>
         <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#FF4081] bg-opacity-10 rounded-full"></div>
       </div>
+      
+      {/* Player Profiles and Chat UI */}
+      <Card className="mt-6 bg-[#1a1a1a] p-0 overflow-hidden shadow-xl relative">
+        <Tabs defaultValue="players" className="w-full">
+          <TabsList className="w-full bg-[#121212] rounded-none grid grid-cols-3">
+            <TabsTrigger value="players" className="data-[state=active]:bg-[#1a1a1a]">
+              <Users2Icon className="w-4 h-4 mr-2" />
+              Players
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="data-[state=active]:bg-[#1a1a1a]">
+              <MessageSquareIcon className="w-4 h-4 mr-2" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-[#1a1a1a]">
+              <Settings2Icon className="w-4 h-4 mr-2" />
+              Profile
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Players Tab */}
+          <TabsContent value="players" className="m-0">
+            <div className="p-4">
+              <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center text-xs font-medium text-gray-400 mb-3 px-2">
+                <div>Player</div>
+                <div>Bet</div>
+                <div>Cash Out</div>
+                <div>Profit</div>
+              </div>
+              
+              <ScrollArea className="h-[280px]">
+                {Array.from([...Array(10)].map((_, i) => ({
+                  id: `player${i}`,
+                  username: ['CryptoBull', 'MoonHodler', 'DiamondHands', 'BTCWhale', 'DegensUnite'][i % 5],
+                  profilePicture: [
+                    '/attached_assets/Y2HmxLIx_400x400.jpg',
+                    '/attached_assets/processed-nft-33-1-dark (1).png',
+                    '/attached_assets/bearishshs.png',
+                    '/attached_assets/head.png',
+                    '/attached_assets/image_1743101567935.png'
+                  ][i % 5],
+                  betAmount: (0.05 + i * 0.1).toFixed(2),
+                  hasCashedOut: i % 3 === 0,
+                  cashOutMultiplier: i % 3 === 0 ? (1.5 + i * 0.5).toFixed(2) : null,
+                }))).map((player, index) => (
+                  <div 
+                    key={player.id}
+                    className={cn(
+                      "flex items-center gap-3 px-2 py-3 hover:bg-[#222222] rounded-lg",
+                      index % 2 === 0 ? "bg-[#1d1d1d]" : "bg-transparent"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-[140px]">
+                      <Avatar className="w-8 h-8 border border-[#333]">
+                        <AvatarImage src={player.profilePicture} />
+                        <AvatarFallback>
+                          {player.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-sm font-medium truncate">{player.username}</div>
+                    </div>
+                    
+                    <div className="text-sm">
+                      <span className="font-medium">{player.betAmount}</span> 
+                      <span className="text-gray-400 text-xs"> ETH</span>
+                    </div>
+                    
+                    <div className="text-sm">
+                      {player.hasCashedOut ? (
+                        <span className="text-[#00FF00] font-semibold">{player.cashOutMultiplier}x</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+                    
+                    <div className="text-sm ml-auto">
+                      {player.hasCashedOut ? (
+                        <Badge className="bg-[#00AA00] hover:bg-[#00AA00]">
+                          +{(parseFloat(player.betAmount) * parseFloat(player.cashOutMultiplier!)).toFixed(2)} ETH
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-gray-400 border-gray-500">Waiting</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+          </TabsContent>
+          
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="m-0 p-0">
+            <div className="flex flex-col h-[332px]">
+              <ScrollArea className="flex-grow p-4">
+                {Array.from([...Array(10)].map((_, i) => ({
+                  id: `msg${i}`,
+                  userId: `player${i % 5}`,
+                  username: ['CryptoBull', 'MoonHodler', 'DiamondHands', 'BTCWhale', 'DegensUnite'][i % 5],
+                  profilePicture: [
+                    '/attached_assets/Y2HmxLIx_400x400.jpg',
+                    '/attached_assets/processed-nft-33-1-dark (1).png',
+                    '/attached_assets/bearishshs.png',
+                    '/attached_assets/head.png',
+                    '/attached_assets/image_1743101567935.png'
+                  ][i % 5],
+                  message: [
+                    "Going all in on this one! 🚀",
+                    "This is definitely mooning soon",
+                    "I'm cashing out at 2x",
+                    "Weak hands lose money 💎🙌",
+                    "Who's in for the next round?",
+                    "That was close!",
+                    "RIP to those who didn't cash out",
+                    "Just got liquidated...",
+                    "Let's go! Finally some gains",
+                    "Anyone know the ATH multiplier?"
+                  ][i % 10],
+                  timestamp: new Date(Date.now() - (i * 60000))
+                }))).map((message, index) => (
+                  <div 
+                    key={message.id}
+                    className="mb-4 last:mb-0"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Avatar className="w-8 h-8 border border-[#333] mt-0.5">
+                        <AvatarImage src={message.profilePicture} />
+                        <AvatarFallback>
+                          {message.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-semibold text-sm">{message.username}</span>
+                          <span className="text-gray-400 text-xs">
+                            {message.timestamp.getHours().toString().padStart(2, '0')}:
+                            {message.timestamp.getMinutes().toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1">{message.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </ScrollArea>
+              
+              <div className="p-4 border-t border-[#333] mt-auto">
+                <form 
+                  className="flex items-center gap-2"
+                  onSubmit={(e: FormEvent) => {
+                    e.preventDefault();
+                    // Add chat message functionality
+                  }}
+                >
+                  <Input 
+                    className="bg-[#222] border-[#444]" 
+                    placeholder="Type a message..." 
+                  />
+                  <Button size="icon" type="submit">
+                    <SendIcon className="w-4 h-4" />
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Profile Settings Tab */}
+          <TabsContent value="settings" className="m-0">
+            <div className="p-6 space-y-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <Avatar className="w-20 h-20 border-2 border-[#444]">
+                  <AvatarImage src={wallet.isConnected ? defaultAvatarImg : undefined} />
+                  <AvatarFallback>
+                    {wallet.isConnected ? wallet.address.substring(0, 2).toUpperCase() : "?"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 space-y-1 text-center sm:text-left">
+                  <h3 className="text-xl font-semibold">
+                    {wallet.isConnected ? 
+                      (wallet.username || `Player ${wallet.address.substring(0, 6)}`) : 
+                      "Guest Player"}
+                  </h3>
+                  {wallet.isConnected && (
+                    <p className="text-gray-400 text-sm truncate">{wallet.address}</p>
+                  )}
+                </div>
+              </div>
+              
+              <Separator className="bg-[#333]" />
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">Display Name</label>
+                  <Input 
+                    className="bg-[#222] border-[#444]" 
+                    placeholder="Enter a nickname" 
+                    defaultValue={wallet.username || ""}
+                    disabled={!wallet.isConnected}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">Profile Picture</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      '/attached_assets/Y2HmxLIx_400x400.jpg',
+                      '/attached_assets/processed-nft-33-1-dark (1).png',
+                      '/attached_assets/bearishshs.png',
+                      '/attached_assets/head.png',
+                      '/attached_assets/image_1743101567935.png'
+                    ].map((imgSrc, i) => (
+                      <Avatar 
+                        key={i} 
+                        className={cn(
+                          "w-12 h-12 border border-[#444] cursor-pointer transition-all",
+                          i === 0 ? "border-2 border-[#FFD700]" : ""
+                        )}
+                      >
+                        <AvatarImage src={imgSrc} />
+                      </Avatar>
+                    ))}
+                  </div>
+                </div>
+                
+                <Button className="w-full bg-[#FFD700] text-black hover:bg-[#E5C100]" disabled={!wallet.isConnected}>
+                  Save Profile
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
 
       {/* Win Modal */}
       <WinModal 

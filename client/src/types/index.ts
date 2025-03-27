@@ -43,6 +43,8 @@ export interface Wallet {
   balance: number;
   isConnected: boolean;
   userId: string; // Add userId for game results
+  username?: string; // Player display name
+  profilePicture?: string; // Player avatar url
 }
 
 export interface LeaderboardEntry {
