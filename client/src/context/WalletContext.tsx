@@ -2,6 +2,7 @@ import React, { createContext, useContext, ReactNode, useState, useCallback, use
 import { Wallet } from '../types';
 import { useAccount, useBalance, useConnect, useDisconnect } from 'wagmi';
 import { useToast } from '@/hooks/use-toast';
+import { casinoContracts } from '../lib/contracts';
 
 interface WalletContextType {
   wallet: Wallet;
@@ -12,6 +13,15 @@ interface WalletContextType {
   addWinnings: (amount: number) => void;
   updateUsername: (newUsername: string) => void;
   updateProfilePicture: (newProfilePicture: string) => void;
+  
+  // Smart contract related methods
+  playCoinFlip: (isHeads: boolean, betAmount: number) => Promise<{ success: boolean; won: boolean }>;
+  joinCrashGame: (betAmount: number) => Promise<boolean>;
+  cashoutCrashGame: () => Promise<boolean>;
+  playDice: (targetNumber: number, isOver: boolean, betAmount: number) => Promise<{ success: boolean; roll: number; won: boolean }>;
+  calculateDiceMultiplier: (targetNumber: number, isOver: boolean) => number;
+  deposit: (amount: number) => Promise<boolean>;
+  withdraw: (amount: number) => Promise<boolean>;
 }
 
 // Create a default value to avoid the undefined check
@@ -30,7 +40,16 @@ const defaultWalletContext: WalletContextType = {
   placeBet: () => false,
   addWinnings: () => {},
   updateUsername: () => {},
-  updateProfilePicture: () => {}
+  updateProfilePicture: () => {},
+  
+  // Smart contract related methods
+  playCoinFlip: async () => ({ success: false, won: false }),
+  joinCrashGame: async () => false,
+  cashoutCrashGame: async () => false,
+  playDice: async () => ({ success: false, roll: 0, won: false }),
+  calculateDiceMultiplier: () => 0,
+  deposit: async () => false,
+  withdraw: async () => false
 };
 
 const WalletContext = createContext<WalletContextType>(defaultWalletContext);
@@ -216,7 +235,324 @@ const WalletContextProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   }, [wallet.isConnected, toast]);
 
-  const contextValue = {
+  // Smart contract integration methods
+  useEffect(() => {
+    // Connect to the casino contracts when wallet connects
+    if (wallet.isConnected && wallet.address) {
+      casinoContracts.connect(wallet).catch(error => {
+        console.error('Failed to connect to casino contracts:', error);
+      });
+    } else {
+      casinoContracts.disconnect();
+    }
+  }, [wallet.isConnected, wallet.address]);
+
+  // Play coin flip game via smart contract
+  const playCoinFlip = useCallback(async (isHeads: boolean, betAmount: number): Promise<{ success: boolean; won: boolean }> => {
+    if (!wallet.isConnected || wallet.balance < betAmount) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance to place this bet.",
+        variant: "destructive",
+      });
+      return { success: false, won: false };
+    }
+
+    // First, deduct the bet amount locally
+    const success = placeBet(betAmount);
+    if (!success) {
+      return { success: false, won: false };
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.playCoinFlip(isHeads, betAmount);
+      
+      // If won, add winnings
+      if (result.won) {
+        // Calculate winnings (2x minus house edge)
+        const winAmount = betAmount * 1.975; // Approximate 2.5% house edge
+        addWinnings(winAmount);
+        
+        toast({
+          title: "You Won!",
+          description: `You won ${winAmount.toFixed(2)} tokens!`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "You Lost",
+          description: `Better luck next time!`,
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error playing coin flip:', error);
+      
+      // Refund the bet amount since the transaction failed
+      addWinnings(betAmount);
+      
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to complete the coin flip. Your bet has been refunded.",
+        variant: "destructive",
+      });
+      
+      return { success: false, won: false };
+    }
+  }, [wallet, placeBet, addWinnings, toast]);
+
+  // Join crash game via smart contract
+  const joinCrashGame = useCallback(async (betAmount: number): Promise<boolean> => {
+    if (!wallet.isConnected || wallet.balance < betAmount) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance to place this bet.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // First, deduct the bet amount locally
+    const success = placeBet(betAmount);
+    if (!success) {
+      return false;
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.joinCrashGame(betAmount);
+      
+      if (!result) {
+        // Refund if joining failed
+        addWinnings(betAmount);
+        toast({
+          title: "Failed to Join",
+          description: "Could not join the crash game. Your bet has been refunded.",
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error joining crash game:', error);
+      
+      // Refund the bet amount since the transaction failed
+      addWinnings(betAmount);
+      
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to join the crash game. Your bet has been refunded.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }, [wallet, placeBet, addWinnings, toast]);
+
+  // Cashout from crash game via smart contract
+  const cashoutCrashGame = useCallback(async (): Promise<boolean> => {
+    if (!wallet.isConnected) {
+      toast({
+        title: "Not Connected",
+        description: "You need to connect your wallet first.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.cashoutCrashGame();
+      
+      // Handling of actual winnings would be done via events in a real implementation
+      // Here we're just returning the success status
+      return result;
+    } catch (error) {
+      console.error('Error cashing out from crash game:', error);
+      
+      toast({
+        title: "Cashout Failed",
+        description: "Failed to cash out from the crash game.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }, [wallet, toast]);
+
+  // Play dice game via smart contract
+  const playDice = useCallback(async (
+    targetNumber: number,
+    isOver: boolean,
+    betAmount: number
+  ): Promise<{ success: boolean; roll: number; won: boolean }> => {
+    if (!wallet.isConnected || wallet.balance < betAmount) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance to place this bet.",
+        variant: "destructive",
+      });
+      return { success: false, roll: 0, won: false };
+    }
+
+    // First, deduct the bet amount locally
+    const success = placeBet(betAmount);
+    if (!success) {
+      return { success: false, roll: 0, won: false };
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.playDice(targetNumber, isOver, betAmount);
+      
+      // If won, add winnings
+      if (result.won) {
+        // Calculate winnings based on the multiplier
+        const multiplier = casinoContracts.calculateDiceMultiplier(targetNumber, isOver);
+        const winAmount = betAmount * multiplier;
+        addWinnings(winAmount);
+        
+        toast({
+          title: "You Won!",
+          description: `You rolled a ${result.roll} and won ${winAmount.toFixed(2)} tokens!`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "You Lost",
+          description: `You rolled a ${result.roll}. Better luck next time!`,
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error playing dice game:', error);
+      
+      // Refund the bet amount since the transaction failed
+      addWinnings(betAmount);
+      
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to complete the dice game. Your bet has been refunded.",
+        variant: "destructive",
+      });
+      
+      return { success: false, roll: 0, won: false };
+    }
+  }, [wallet, placeBet, addWinnings, toast]);
+
+  // Calculate dice multiplier
+  const calculateDiceMultiplier = useCallback((targetNumber: number, isOver: boolean): number => {
+    return casinoContracts.calculateDiceMultiplier(targetNumber, isOver);
+  }, []);
+
+  // Deposit funds to the casino contract
+  const deposit = useCallback(async (amount: number): Promise<boolean> => {
+    if (!wallet.isConnected) {
+      toast({
+        title: "Not Connected",
+        description: "You need to connect your wallet first.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.deposit(amount);
+      
+      if (result) {
+        // Update balance after successful deposit
+        // In a real implementation, we would get the new balance from the contract
+        updateBalance(wallet.balance + amount);
+        
+        toast({
+          title: "Deposit Successful",
+          description: `Successfully deposited ${amount} tokens.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Deposit Failed",
+          description: "Failed to deposit funds.",
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error depositing funds:', error);
+      
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to deposit funds.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }, [wallet, updateBalance, toast]);
+
+  // Withdraw funds from the casino contract
+  const withdraw = useCallback(async (amount: number): Promise<boolean> => {
+    if (!wallet.isConnected) {
+      toast({
+        title: "Not Connected",
+        description: "You need to connect your wallet first.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (wallet.balance < amount) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance to withdraw this amount.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Call the contract function
+      const result = await casinoContracts.withdraw(amount);
+      
+      if (result) {
+        // Update balance after successful withdrawal
+        updateBalance(wallet.balance - amount);
+        
+        toast({
+          title: "Withdrawal Successful",
+          description: `Successfully withdrew ${amount} tokens.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Withdrawal Failed",
+          description: "Failed to withdraw funds.",
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error withdrawing funds:', error);
+      
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to withdraw funds.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }, [wallet, updateBalance, toast]);
+
+  const contextValue: WalletContextType = {
     wallet,
     connectWallet,
     disconnectWallet,
@@ -224,7 +560,16 @@ const WalletContextProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     placeBet,
     addWinnings,
     updateUsername,
-    updateProfilePicture
+    updateProfilePicture,
+    
+    // Smart contract methods
+    playCoinFlip,
+    joinCrashGame,
+    cashoutCrashGame,
+    playDice,
+    calculateDiceMultiplier,
+    deposit,
+    withdraw
   };
   
   return (
