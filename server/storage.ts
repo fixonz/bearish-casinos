@@ -366,7 +366,30 @@ export class PgStorage implements IStorage {
 
   // Game operations
   async getGames(): Promise<Game[]> {
-    return await this.db.query.games.findMany();
+    try {
+      // Try a more compatible approach with the pool query
+      const result = await this.db.execute(sql`
+        SELECT 
+          id, 
+          "gameId", 
+          name, 
+          description, 
+          "imageSrc",
+          rtp, 
+          category, 
+          "isPopular", 
+          "isNew", 
+          "isTrending", 
+          "isHot", 
+          "maxWin",
+          path
+        FROM games
+      `);
+      return result as Game[];
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      throw error;
+    }
   }
 
   async getGameById(id: string): Promise<Game | undefined> {
@@ -568,6 +591,42 @@ export class PgStorage implements IStorage {
           isTrending: false,
           isHot: true,
           maxWin: 500
+        },
+        {
+          gameId: 'tokentrader',
+          name: 'Token Trader',
+          description: 'Trade crypto tokens to build your portfolio and make profit before time runs out.',
+          rtp: 95,
+          category: 'Crypto',
+          isPopular: false,
+          isNew: true,
+          isTrending: true,
+          isHot: true,
+          maxWin: 5
+        },
+        {
+          gameId: 'memerace',
+          name: 'Meme Race',
+          description: 'Bet on your favorite meme coin and watch the race! Different meme coins have different odds.',
+          rtp: 96,
+          category: 'Crypto',
+          isPopular: false,
+          isNew: true,
+          isTrending: true,
+          isHot: true,
+          maxWin: 8
+        },
+        {
+          gameId: 'mininggame',
+          name: 'Crypto Mining Simulator',
+          description: 'Build and manage your crypto mining operation. Purchase hardware, select pools and cryptocurrencies, and try to earn more than your initial investment!',
+          rtp: 92,
+          category: 'Crypto',
+          isPopular: false,
+          isNew: true,
+          isTrending: false,
+          isHot: true,
+          maxWin: 5
         }
       ];
       

@@ -193,14 +193,30 @@ export const useCrash = () => {
   const [history, setHistory] = useState<Array<{ multiplier: number, timestamp: Date }>>([]);
   const [chartData, setChartData] = useState<Array<{ time: number, value: number }>>([{ time: 0, value: 1 }]);
   
-  // Generate a crash point with house edge (96% RTP)
+  // Generate a crash point with higher chance of early crash
   const generateCrashPoint = (): number => {
-    // Using a standard house edge formula for crash games
-    // (e^(house_edge * random())) where random is 0-1
-    // This creates an exponential distribution
-    const houseEdge = 0.04; // 4% house edge for a 96% RTP
-    const randomValue = Math.random();
-    return Math.max(1, Math.floor((Math.exp(houseEdge * randomValue) / houseEdge) * 100) / 100);
+    // Modified formula to increase probability of lower multipliers
+    // Higher house edge increases chance of early crashes
+    const houseEdge = 0.15; // 15% house edge for more frequent crashes
+    
+    // Generate a biased random value that favors lower numbers
+    // This makes crashes more frequent at lower multipliers
+    let randomValue = Math.random();
+    
+    // Apply additional bias toward early crashes
+    randomValue = Math.pow(randomValue, 1.5);
+    
+    // Calculate crash point with modified formula
+    // Limit maximum multiplier to 10 most of the time
+    let crashPoint = Math.max(1, Math.floor((Math.exp(houseEdge * randomValue) / houseEdge) * 100) / 100);
+    
+    // 80% chance to crash before 10x
+    if (crashPoint > 10 && Math.random() < 0.8) {
+      crashPoint = 1 + Math.random() * 9; 
+      crashPoint = Math.floor(crashPoint * 100) / 100;
+    }
+    
+    return crashPoint;
   };
   
   // Start the crash game

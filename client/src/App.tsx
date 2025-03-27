@@ -10,6 +10,9 @@ import CrashGame from "@/pages/CrashGame";
 import BlackjackGame from "@/pages/BlackjackGame";
 import RouletteGame from "@/pages/RouletteGame";
 import PokerGame from "@/pages/PokerGame";
+import TokenTraderGame from "@/pages/TokenTraderGame";
+import MemeRaceGame from "@/pages/MemeRaceGame";
+import MiningGamePage from "@/pages/MiningGame";
 import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
 import { WalletProvider } from "@/context/WalletContext";
@@ -26,6 +29,9 @@ function Router() {
       <Route path="/games/blackjack" component={BlackjackGame} />
       <Route path="/games/roulette" component={RouletteGame} />
       <Route path="/games/poker" component={PokerGame} />
+      <Route path="/games/tokentrader" component={TokenTraderGame} />
+      <Route path="/games/memerace" component={MemeRaceGame} />
+      <Route path="/games/mining" component={MiningGamePage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

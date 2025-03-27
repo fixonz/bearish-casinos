@@ -23,12 +23,12 @@ const Header: React.FC = () => {
   return (
     <header className="relative z-30">
       <div className="bg-primary bg-opacity-95 backdrop-blur-sm shadow-md fixed w-full top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          {/* Logo */}
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          {/* Logo (Made Bigger) */}
           <Link href="/">
             <div className="flex items-center cursor-pointer">
-              <img src={bearishLogo} alt="Bearish Logo" className="h-8 mr-2" />
-              <span className="font-poppins font-bold text-xl text-white">
+              <img src={bearishLogo} alt="Bearish Logo" className="h-12 mr-3" />
+              <span className="font-poppins font-bold text-2xl text-white">
                 BEARiSH <span className="text-[#FFD700]">Casino</span>
               </span>
             </div>
