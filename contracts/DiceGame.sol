@@ -24,13 +24,9 @@ contract DiceGame is AbstractCasinoBase {
     uint8 public constant MIN_ROLL = 1;
     uint8 public constant MAX_ROLL = 100;
     
-    // Pyth Entropy variables
-    IPythEntropy public pythEntropy;
-    mapping(bytes32 => bool) public pendingRequests;
-    
-    // Request tracking
-    bytes32 public lastRequestId;
-    bytes32 public lastRevealedRandomness;
+    // Randomization variables - will be replaced with Pyth Entropy
+    bytes32 private lastHash;
+    uint256 private nonce;
     
     /**
      * @dev Constructor
@@ -41,10 +37,11 @@ contract DiceGame is AbstractCasinoBase {
     constructor(
         uint256 _houseEdge, 
         uint256 _minBet, 
-        uint256 _maxBet,
-        address _pythEntropyAddress
+        uint256 _maxBet
     ) AbstractCasinoBase(_houseEdge, _minBet, _maxBet) {
-        pythEntropy = IPythEntropy(_pythEntropyAddress);
+        // Initialize with a seed hash
+        lastHash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, msg.sender));
+        nonce = 0;
     }
     
     /**
@@ -105,17 +102,9 @@ contract DiceGame is AbstractCasinoBase {
      * @return A pseudo-random number between 1 and 100
      */
     function _generateRandomRoll() private returns (uint8) {
-        lastRequestId = pythEntropy.requestRandomness();
-        pendingRequests[lastRequestId] = true;
-        
-        // Wait for randomness to be revealed
-        bytes32 randomness = pythEntropy.getRandomness(lastRequestId);
-        require(randomness != bytes32(0), "Randomness not yet available");
-        
-        pendingRequests[lastRequestId] = false;
-        lastRevealedRandomness = randomness;
-        
-        return uint8((uint256(randomness) % 100) + 1);
+        nonce++;
+        lastHash = keccak256(abi.encodePacked(lastHash, msg.sender, nonce, block.timestamp));
+        return uint8((uint256(lastHash) % 100) + 1);
     }
     
     /**
